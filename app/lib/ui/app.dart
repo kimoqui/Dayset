@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../app/cloud_sync.dart';
 import '../app/derive.dart';
 import '../app/now_check.dart';
 import '../app/state.dart';
@@ -13,6 +14,7 @@ import '../app/store.dart';
 import '../app/streak.dart';
 import '../core/model/models.dart';
 import '../platform/widget_bridge.dart';
+import 'account.dart';
 import 'alarm_overlay.dart';
 import 'kit.dart';
 import 'now_dock.dart';
@@ -35,8 +37,11 @@ import 'theme.dart';
 const _themeKey = 'dayset:theme';
 
 class DaySetApp extends StatefulWidget {
-  const DaySetApp({super.key, required this.store, this.bridge});
+  const DaySetApp({super.key, required this.store, this.bridge, this.cloud});
   final Store store;
+
+  /// 계정 동기화(없으면 계정 없이 동작).
+  final CloudSync? cloud;
 
   /// 홈 화면 위젯 연결(없으면 위젯 없이 동작).
   final WidgetBridge? bridge;
@@ -47,6 +52,7 @@ class DaySetApp extends StatefulWidget {
 
 class _DaySetAppState extends State<DaySetApp> {
   late final StoreNotifier _notifier = StoreNotifier(widget.store);
+  late final CloudNotifier? _cloud = widget.cloud == null ? null : CloudNotifier(widget.cloud!);
   late ThemePref _theme = ThemePref.values.where((t) => t.name == widget.store.storage.kv.read(_themeKey)).firstOrNull ?? ThemePref.dark;
   final _nav = GlobalKey<NavigatorState>();
 
@@ -58,12 +64,13 @@ class _DaySetAppState extends State<DaySetApp> {
   @override
   void dispose() {
     _notifier.dispose();
+    _cloud?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StoreScope(
+    final app = StoreScope(
       notifier: _notifier,
       child: MaterialApp(
         title: 'DaySet',
@@ -80,6 +87,8 @@ class _DaySetAppState extends State<DaySetApp> {
         home: const _Root(),
       ),
     );
+    final cloud = _cloud;
+    return cloud == null ? app : CloudScope(notifier: cloud, child: app);
   }
 }
 
@@ -164,6 +173,10 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
       store.addListener(_onState);
       _pullWidgetTaps();
       _refresh();
+      _cloud = CloudScope.read(context);
+      _cloud?.addListener(_onCloud);
+      _cloud?.syncNow();
+      _cloudTick = Timer.periodic(const Duration(minutes: 2), (_) => _cloud?.syncNow());
     });
   }
 
@@ -173,10 +186,26 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
     store; // 여기서 잡아 둔다
   }
 
+  CloudSync? _cloud;
+  Timer? _cloudTick;
+  bool _conflictOpen = false;
+
+  /// 기록이 엇갈리면 고르는 창을 한 번 연다.
+  void _onCloud() {
+    final c = _cloud;
+    if (c == null || c.conflict == null || _conflictOpen) return;
+    final ctx = widget.nav.currentContext;
+    if (ctx == null) return;
+    _conflictOpen = true;
+    showConflictSheet(ctx, c).whenComplete(() => _conflictOpen = false);
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     store.removeListener(_onState);
+    _cloud?.removeListener(_onCloud);
+    _cloudTick?.cancel();
     _tick?.cancel();
     _toastTimer?.cancel();
     super.dispose();
@@ -187,6 +216,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
     if (state == AppLifecycleState.resumed) {
       _pullWidgetTaps();
       _refresh();
+      _cloud?.syncNow();
     }
   }
 

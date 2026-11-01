@@ -12,6 +12,7 @@ lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app�
   store.dart       Store: 화면이 부르는 동작 전부(웹 store.ts와 같은 이름)
   derive.dart      화면용 계산(일정, 하루 평가, 기간 통계, 관찰, 바뀜 미리보기)
   streak / social / nearby / duration / priority_model / now_check / metrics / nlp / ics / seed / goal_text
+  cloud / cloud_sync 계정 연동(Supabase, 웹 cloud.ts·cloudSync.ts와 같은 규칙), cloud_config 서버 주소·공개 키
 lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
 lib/ui             화면 — 웹 src/ui와 1:1
   theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)

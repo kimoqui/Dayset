@@ -11,6 +11,7 @@ import '../../core/model/models.dart';
 import '../../platform/notify.dart';
 import '../../platform/share.dart';
 import '../calendar_connect.dart';
+import '../account.dart';
 import '../kit.dart';
 import '../preview.dart';
 import '../scope.dart';
@@ -115,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return ScreenList(children: [
       const TopBar(title: '설정'),
+      const AccountCard(),
 
       if (problem != SaveResult.ok)
         DsBanner(problem == SaveResult.quota

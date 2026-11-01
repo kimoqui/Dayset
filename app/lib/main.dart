@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'app/cloud.dart';
+import 'app/cloud_config.dart';
+import 'app/cloud_sync.dart';
 import 'app/state.dart';
 import 'app/store.dart';
 import 'platform/file_store.dart';
+import 'platform/http_send.dart';
 import 'platform/widget_bridge.dart';
 import 'ui/app.dart';
 
@@ -25,5 +29,7 @@ Future<void> main() async {
     // 위젯 설정 전(앱 그룹 미설정)에도 앱은 실행된다.
     bridge = null;
   }
-  runApp(DaySetApp(store: store, bridge: bridge));
+  // 계정 동기화(서버 주소가 없으면 '서버 준비 중'으로 보인다).
+  final cloud = CloudSync(store: store, client: CloudClient(const CloudConfig(url: cloudUrl, key: cloudKey), ioSend));
+  runApp(DaySetApp(store: store, bridge: bridge, cloud: cloud));
 }

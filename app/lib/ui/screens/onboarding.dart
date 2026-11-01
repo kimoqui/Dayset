@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../app/seed.dart';
 import '../../app/state.dart';
 import '../../core/model/models.dart';
+import '../account.dart';
 import '../kit.dart';
 import '../preview.dart';
 import '../scope.dart';
@@ -100,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Expanded(child: bodyText(context, text)),
             ]),
         ]),
-        const LabelText('기록은 이 기기에만 저장되고 서버로 보내지 않아요.'),
+        const LabelText('기록은 이 기기에 저장돼요. 계정에 로그인하면 웹과 안드로이드 앱에서 같은 기록을 이어 써요.'),
       ],
       footer: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         DsButton.primary('시작하기 · 목표만 고르고 기록부터', block: true, onPressed: () {
@@ -120,6 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             _go(_Step.goal);
           }),
         ),
+        Center(child: DsButton('계정이 있어요 · 로그인해서 이어 쓰기', kind: BtnKind.ghost, small: true, onPressed: () => showAccountSheet(context))),
       ]),
     );
   }
