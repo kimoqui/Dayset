@@ -116,6 +116,11 @@ export interface GoalIntent {
   wake: number;
   sleepMinutes: number;
   exerciseMinutes: number;
+  /** '기타'에 적은 글에서 읽은 운동 이름(예: 달리기)과 시각(자정 기준 분). */
+  exerciseTitle?: string;
+  exerciseStart?: number;
+  /** '기타'에 적은 글(이 기기에만 둔다, 지표로 내보내지 않는다). */
+  note?: string;
   setAt: Date;
 }
 

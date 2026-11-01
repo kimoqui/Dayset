@@ -903,18 +903,41 @@ class Store {
   // 처음 목표 · 동의 · 알림 · 일정 체크 · 지표 · 피드백
   // -------------------------------------------------------------------------
 
-  void setIntent({required List<GoalFocus> focus, required int wake, required int sleepMinutes, required int exerciseMinutes}) {
+  void setIntent({
+    required List<GoalFocus> focus,
+    required int wake,
+    required int sleepMinutes,
+    required int exerciseMinutes,
+    String? exerciseTitle,
+    int? exerciseStart,
+    String? note,
+  }) {
     final t = now();
     _set((s) {
       // 고른 목표를 기본 목표에도 바로 반영한다(기록 없이 바로 설정하는 길에서도 쓰도록).
       var goals = s.goals.copyWith(wake: ClockTime(wake), sleepMinutes: sleepMinutes);
       if (focus.contains(GoalFocus.exercise)) {
         final ex = s.goals.exercise ?? defaultGoals.exercise!;
-        goals = goals.copyWith(exercise: ex.copyWith(minutes: exerciseMinutes));
+        goals = goals.copyWith(
+          exercise: ex.copyWith(
+            minutes: exerciseMinutes,
+            title: exerciseTitle ?? ex.title,
+            start: exerciseStart != null ? ClockTime(exerciseStart) : ex.start,
+          ),
+        );
       }
       return s.copyWith(
         goals: goals,
-        intent: GoalIntent(focus: focus, wake: wake, sleepMinutes: sleepMinutes, exerciseMinutes: exerciseMinutes, setAt: t),
+        intent: GoalIntent(
+          focus: focus,
+          wake: wake,
+          sleepMinutes: sleepMinutes,
+          exerciseMinutes: exerciseMinutes,
+          exerciseTitle: exerciseTitle,
+          exerciseStart: exerciseStart,
+          note: note,
+          setAt: t,
+        ),
         metrics: addEvent(_firstTouch(s, t), t, 'goal_set', focus.map((f) => f.name).join(',')),
       );
     });

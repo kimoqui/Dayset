@@ -81,7 +81,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       for (final slot in mealSlots) meal(slot),
       ex != null
           ? _HabitRow(title: '운동', include: true, recorded: ex, start: roundedClock(ex.start), minutes: _clamp(_round5(ex.minutes), 10, 120))
-          : _HabitRow(title: '운동', include: wants(GoalFocus.exercise), recorded: null, start: 20 * 60 + 30, minutes: intent?.exerciseMinutes ?? 30),
+          : _HabitRow(title: '운동', include: wants(GoalFocus.exercise), recorded: null, start: intent?.exerciseStart ?? 20 * 60 + 30, minutes: intent?.exerciseMinutes ?? 30),
     ];
   }
 
@@ -106,7 +106,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     final bed = firstAlarm - _sleepMinutes - s.settings.sleepLatencyMinutes;
 
     void submit() {
-      HabitSlot slot(_HabitRow r) => HabitSlot(title: r.title, activity: r.title == '운동' ? Activity.exercise : Activity.meal, start: ClockTime(r.start), minutes: r.minutes);
+      HabitSlot slot(_HabitRow r) => HabitSlot(title: r.title == '운동' ? (context.store.state.intent?.exerciseTitle ?? '운동') : r.title, activity: r.title == '운동' ? Activity.exercise : Activity.meal, start: ClockTime(r.start), minutes: r.minutes);
       final goals = HabitGoals(
         wake: ClockTime(_wake),
         sleepMinutes: _sleepMinutes,

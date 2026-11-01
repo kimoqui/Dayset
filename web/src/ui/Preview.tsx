@@ -5,6 +5,7 @@ import { computeMetrics, surveyDue } from '../app/metrics';
 import type { AppState, GoalFocus } from '../app/state';
 import { addReport, answerSurvey, now as clockNow, setConsent, setIntent, setNotify, surveyLater, track } from '../app/store';
 import { formatClock } from '../engine/models';
+import { GOAL_EXAMPLES, readGoalText } from '../app/goalText';
 import { Icon, type IconName, NumberField, Sheet, TimeField } from './kit';
 import { haptic } from './motion';
 import { enableNotifications, notifySupport } from './notify';
@@ -23,21 +24,39 @@ const FOCUS: { id: GoalFocus; icon: IconName; title: string; desc: string }[] = 
 
 export function GoalStep({ s, onBack, onNext }: { s: AppState; onBack: () => void; onNext: () => void }) {
   const init = s.intent;
-  const [focus, setFocus] = useState<GoalFocus[]>(init?.focus ?? []);
-  const [wake, setWake] = useState(init?.wake ?? 7 * 60);
-  const [sleepH, setSleepH] = useState((init?.sleepMinutes ?? 420) / 60);
-  const [exMin, setExMin] = useState(init?.exerciseMinutes ?? 30);
+  const [manual, setManual] = useState<GoalFocus[]>(init?.focus ?? []);
+  /** 글에서 읽었지만 사용자가 끈 목표. */
+  const [removed, setRemoved] = useState<GoalFocus[]>([]);
+  const [otherOn, setOtherOn] = useState(!!init?.note);
+  const [text, setText] = useState(init?.note ?? '');
+  const reading = useMemo(() => readGoalText(otherOn ? text : ''), [otherOn, text]);
+  // 사용자가 직접 바꾼 값은 글에서 읽은 값보다 앞선다.
+  const [wakeIn, setWakeIn] = useState<number | null>(init ? init.wake : null);
+  const [sleepIn, setSleepIn] = useState<number | null>(init ? init.sleepMinutes / 60 : null);
+  const [exIn, setExIn] = useState<number | null>(init ? init.exerciseMinutes : null);
+  const wake = wakeIn ?? reading.wake ?? 7 * 60;
+  const sleepH = sleepIn ?? (reading.sleepMinutes != null ? reading.sleepMinutes / 60 : 7);
+  const exMin = exIn ?? reading.exerciseMinutes ?? 30;
+  const focus = FOCUS.map((f) => f.id).filter((id) => manual.includes(id) || (reading.focus.includes(id) && !removed.includes(id)));
   const on = (f: GoalFocus) => focus.includes(f);
+  const auto = (f: GoalFocus) => !manual.includes(f) && reading.focus.includes(f) && !removed.includes(f);
   const toggle = (f: GoalFocus) => {
     haptic(6);
-    setFocus((xs) => (xs.includes(f) ? xs.filter((x) => x !== f) : [...xs, f]));
+    if (on(f)) {
+      setManual((xs) => xs.filter((x) => x !== f));
+      if (reading.focus.includes(f)) setRemoved((xs) => [...xs, f]);
+    } else {
+      setManual((xs) => [...xs, f]);
+      setRemoved((xs) => xs.filter((x) => x !== f));
+    }
   };
+  const exChoices = [...new Set([15, 30, 45, 60, exMin])].sort((a, b) => a - b);
   return (
     <div className="screen plain" style={{ paddingTop: 24 }}>
       <span className="t-label">목표 정하기</span>
       <h1 className="t-title">무엇을 바꾸고 싶어요?</h1>
       <p className="t-label" style={{ margin: 0 }}>
-        여러 개 골라도 돼요. 첫날 기록을 본 뒤 이 목표에 맞춰 일정을 짜요.
+        여러 개 골라도 돼요. 마땅한 게 없으면 '기타'에 적어 주세요. 첫날 기록을 본 뒤 이 목표에 맞춰 일정을 짜요.
       </p>
       <div className="goal-grid" role="group" aria-label="바꾸고 싶은 것">
         {FOCUS.map((f) => (
@@ -45,23 +64,86 @@ export function GoalStep({ s, onBack, onNext }: { s: AppState; onBack: () => voi
             <span className="goal-ic">
               <Icon name={on(f.id) ? 'check' : f.icon} size={18} />
             </span>
-            <span className="col" style={{ gap: 2, minWidth: 0 }}>
+            <span className="col grow" style={{ gap: 2, minWidth: 0 }}>
               <span className="strong">{f.title}</span>
               <span className="t-label">{f.desc}</span>
             </span>
+            {auto(f.id) && <span className="auto-tag">적은 글에서</span>}
           </button>
         ))}
+        <button
+          type="button"
+          className={`goal-card ${otherOn ? 'on' : ''}`}
+          aria-pressed={otherOn}
+          aria-expanded={otherOn}
+          onClick={() => {
+            haptic(6);
+            setOtherOn((v) => !v);
+          }}
+        >
+          <span className="goal-ic">
+            <Icon name={otherOn ? 'check' : 'chat'} size={18} />
+          </span>
+          <span className="col" style={{ gap: 2, minWidth: 0 }}>
+            <span className="strong">기타 · 직접 적기</span>
+            <span className="t-label">하고 싶은 걸 적으면 알아서 읽고 목표를 맞춰요</span>
+          </span>
+        </button>
       </div>
+      {otherOn && (
+        <section className="card stack" aria-label="직접 적기">
+          <label className="field">
+            <span>바꾸고 싶은 것을 편하게 적어 주세요</span>
+            <textarea
+              className="input"
+              style={{ height: 88, padding: 12, resize: 'none', lineHeight: '21px' }}
+              value={text}
+              maxLength={300}
+              autoFocus
+              placeholder="예: 6시 반에 일어나고 저녁 8시에 30분 달리기"
+              onChange={(e) => setText(e.target.value)}
+            />
+          </label>
+          {!text.trim() && (
+            <div className="chips">
+              {GOAL_EXAMPLES.map((e) => (
+                <button key={e} type="button" className="chip" onClick={() => setText(e)}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+          {text.trim() && (
+            <div className="col" style={{ gap: 8 }} aria-live="polite">
+              <span className="t-label">{reading.found.length ? '이렇게 읽고 위 목표에 반영했어요' : '아직 읽은 목표가 없어요'}</span>
+              {reading.found.length > 0 && (
+                <div className="chips">
+                  {reading.found.map((f) => (
+                    <span key={f.focus} className={`pill ${removed.includes(f.focus) ? 'gray' : ''}`}>
+                      {f.text}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {reading.unknown.length > 0 && (
+                <span className="t-label">
+                  ‘{reading.unknown.join('’, ‘')}’{hasFinal(reading.unknown[reading.unknown.length - 1]) ? '은' : '는'} 아직 일정에 자동으로 넣지 못해요. 시작한 뒤 할 일로 넣을 수 있어요.
+                </span>
+              )}
+            </div>
+          )}
+        </section>
+      )}
       {(on('wake') || on('sleep') || on('exercise')) && (
         <section className="card stack" aria-label="목표 값">
-          {on('wake') && <TimeField label="목표 기상 시각" value={wake} onChange={setWake} />}
-          {on('sleep') && <NumberField label="목표 수면 시간" unit="시간" value={sleepH} step={0.5} min={5} max={10} onChange={setSleepH} />}
+          {on('wake') && <TimeField label="목표 기상 시각" value={wake} onChange={setWakeIn} />}
+          {on('sleep') && <NumberField label="목표 수면 시간" unit="시간" value={sleepH} step={0.5} min={5} max={10} onChange={setSleepIn} />}
           {on('exercise') && (
             <div className="field">
-              <span>운동 시간</span>
+              <span>운동 시간{reading.exerciseTitle && reading.exerciseTitle !== '운동' ? ` · ${reading.exerciseTitle}` : ''}</span>
               <div className="chips" role="radiogroup" aria-label="운동 시간">
-                {[15, 30, 45, 60].map((m) => (
-                  <button key={m} type="button" className="chip" role="radio" aria-checked={exMin === m} onClick={() => setExMin(m)}>
+                {exChoices.map((m) => (
+                  <button key={m} type="button" className="chip" role="radio" aria-checked={exMin === m} onClick={() => setExIn(m)}>
                     {m}분
                   </button>
                 ))}
@@ -80,7 +162,16 @@ export function GoalStep({ s, onBack, onNext }: { s: AppState; onBack: () => voi
           className="btn primary grow"
           disabled={focus.length === 0}
           onClick={() => {
-            setIntent({ focus, wake, sleepMinutes: Math.round(sleepH * 60), exerciseMinutes: exMin });
+            const ex = on('exercise');
+            setIntent({
+              focus,
+              wake,
+              sleepMinutes: Math.round(sleepH * 60),
+              exerciseMinutes: exMin,
+              ...(ex && reading.exerciseTitle ? { exerciseTitle: reading.exerciseTitle } : {}),
+              ...(ex && reading.exerciseStart != null ? { exerciseStart: reading.exerciseStart } : {}),
+              ...(otherOn && text.trim() ? { note: text.trim() } : {}),
+            });
             onNext();
           }}
         >
@@ -89,6 +180,12 @@ export function GoalStep({ s, onBack, onNext }: { s: AppState; onBack: () => voi
       </div>
     </div>
   );
+}
+
+/** 마지막 글자에 받침이 있는지(조사 고르기). */
+function hasFinal(word: string): boolean {
+  const c = word.trim().charCodeAt(word.trim().length - 1);
+  return c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 !== 0 : false;
 }
 
 // ---------------------------------------------------------------------------

@@ -49,7 +49,7 @@ export function Review({ s, now, onBack, onDone }: { s: AppState; now: Date; onB
       ...MEAL_SLOTS.map(meal),
       ex
         ? { title: '운동', include: true, recorded: ex, start: roundedClock(ex.start), minutes: clamp(round5(ex.minutes), 10, 120) }
-        : { title: '운동', include: !!intent?.focus.includes('exercise'), recorded: null, start: 20 * 60 + 30, minutes: intent?.exerciseMinutes ?? 30 },
+        : { title: '운동', include: !!intent?.focus.includes('exercise'), recorded: null, start: intent?.exerciseStart ?? 20 * 60 + 30, minutes: intent?.exerciseMinutes ?? 30 },
     ];
   });
   const up = (i: number, p: Partial<HabitRow>) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...p } : r)));
@@ -62,7 +62,7 @@ export function Review({ s, now, onBack, onDone }: { s: AppState; now: Date; onB
   const bed = firstAlarm - sleepMinutes - s.settings.sleepLatencyMinutes;
 
   const submit = () => {
-    const slot = (r: HabitRow): HabitSlot => ({ title: r.title, activity: r.title === '운동' ? 'exercise' : 'meal', start: r.start, minutes: r.minutes });
+    const slot = (r: HabitRow): HabitSlot => ({ title: r.title === '운동' ? (intent?.exerciseTitle ?? '운동') : r.title, activity: r.title === '운동' ? 'exercise' : 'meal', start: r.start, minutes: r.minutes });
     const goals: HabitGoals = {
       wake,
       sleepMinutes,

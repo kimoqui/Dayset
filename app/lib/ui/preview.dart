@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../app/goal_text.dart';
 import '../app/metrics.dart';
 import '../app/state.dart';
 import '../core/model/models.dart';
@@ -179,83 +180,204 @@ class GoalStep extends StatefulWidget {
 }
 
 class _GoalStepState extends State<GoalStep> {
-  late List<GoalFocus> _sel;
-  late int _wake;
-  late int _sleep;
-  late int _ex;
+  /// 직접 고른 목표.
+  late List<GoalFocus> _manual;
+
+  /// 글에서 읽었지만 사용자가 끈 목표.
+  final List<GoalFocus> _removed = [];
+
+  // 사용자가 직접 바꾼 값은 글에서 읽은 값보다 앞선다(null이면 아직 안 바꿈).
+  int? _wakeIn;
+  int? _sleepIn;
+  int? _exIn;
+
+  bool _otherOn = false;
+  late final TextEditingController _text;
+  GoalReading _reading = readGoalText('');
 
   @override
   void initState() {
     super.initState();
     final i = context.store.state.intent;
-    _sel = [...?i?.focus];
-    _wake = i?.wake ?? 7 * 60;
-    _sleep = i?.sleepMinutes ?? 420;
-    _ex = i?.exerciseMinutes ?? 30;
+    _manual = [...?i?.focus];
+    _wakeIn = i?.wake;
+    _sleepIn = i?.sleepMinutes;
+    _exIn = i?.exerciseMinutes;
+    _otherOn = i?.note != null;
+    _text = TextEditingController(text: i?.note ?? '');
+    _reread();
   }
 
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  void _reread() => _reading = readGoalText(_otherOn ? _text.text : '');
+
+  int get _wake => _wakeIn ?? _reading.wake ?? 7 * 60;
+  int get _sleep => _sleepIn ?? _reading.sleepMinutes ?? 420;
+  int get _ex => _exIn ?? _reading.exerciseMinutes ?? 30;
+
+  List<GoalFocus> get _sel => [
+        for (final f in _focus)
+          if (_manual.contains(f.id) || (_reading.focus.contains(f.id) && !_removed.contains(f.id))) f.id,
+      ];
+
   bool _on(GoalFocus f) => _sel.contains(f);
+  bool _auto(GoalFocus f) => !_manual.contains(f) && _reading.focus.contains(f) && !_removed.contains(f);
 
   void _toggle(GoalFocus f) {
     haptic(6);
-    setState(() => _on(f) ? _sel.remove(f) : _sel.add(f));
+    setState(() {
+      if (_on(f)) {
+        _manual.remove(f);
+        if (_reading.focus.contains(f)) _removed.add(f);
+      } else {
+        _manual.add(f);
+        _removed.remove(f);
+      }
+    });
+  }
+
+  Widget _card({required bool on, required DsIcons icon, required String title, required String desc, required VoidCallback onTap, Widget? tag}) {
+    final c = context.ds;
+    return Pressable(
+      scale: 0.98,
+      selected: on,
+      semanticLabel: title,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: EdgeInsets.symmetric(horizontal: on ? 13 : 14, vertical: on ? 11 : 12),
+        decoration: BoxDecoration(
+          color: on ? c.pillBg : c.surface,
+          border: Border.all(color: on ? c.accent : c.lineBtn, width: on ? 2 : 1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: on ? c.accent : c.surface2, shape: BoxShape.circle),
+            child: Center(child: DsIcon(on ? DsIcons.check : icon, size: 18, color: on ? c.accentInk : c.accent)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: DsText.base.copyWith(fontWeight: FontWeight.w600, color: c.ink)),
+              const SizedBox(height: 2),
+              LabelText(desc),
+            ]),
+          ),
+          if (tag != null) ...[const SizedBox(width: 8), tag],
+        ]),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.ds;
+    final sel = _sel;
+    final r = _reading;
+    final typed = _text.text.trim().isNotEmpty;
+    final exChoices = ({15, 30, 45, 60, _ex}.toList()..sort());
     return StepPage(
       children: [
-        const StepHead(step: '목표 정하기', title: '무엇을 바꾸고 싶어요?', desc: '여러 개 골라도 돼요. 첫날 기록을 본 뒤 이 목표에 맞춰 일정을 짜요.'),
+        const StepHead(step: '목표 정하기', title: '무엇을 바꾸고 싶어요?', desc: "여러 개 골라도 돼요. 마땅한 게 없으면 '기타'에 적어 주세요. 첫날 기록을 본 뒤 이 목표에 맞춰 일정을 짜요."),
         Semantics(
           label: '바꾸고 싶은 것',
           container: true,
           child: Column(children: [
             for (final f in _focus) ...[
               if (f != _focus.first) const SizedBox(height: 8),
-              Pressable(
-                scale: 0.98,
-                selected: _on(f.id),
-                semanticLabel: f.title,
+              _card(
+                on: _on(f.id),
+                icon: f.icon,
+                title: f.title,
+                desc: f.desc,
                 onTap: () => _toggle(f.id),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: EdgeInsets.symmetric(horizontal: _on(f.id) ? 13 : 14, vertical: _on(f.id) ? 11 : 12),
-                  decoration: BoxDecoration(
-                    color: _on(f.id) ? c.pillBg : c.surface,
-                    border: Border.all(color: _on(f.id) ? c.accent : c.lineBtn, width: _on(f.id) ? 2 : 1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(color: _on(f.id) ? c.accent : c.surface2, shape: BoxShape.circle),
-                      child: Center(child: DsIcon(_on(f.id) ? DsIcons.check : f.icon, size: 18, color: _on(f.id) ? c.accentInk : c.accent)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(f.title, style: DsText.base.copyWith(fontWeight: FontWeight.w600, color: c.ink)),
-                        const SizedBox(height: 2),
-                        LabelText(f.desc),
-                      ]),
-                    ),
-                  ]),
-                ),
+                tag: _auto(f.id)
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(color: c.pillBg, borderRadius: BorderRadius.circular(999)),
+                        child: Text('적은 글에서', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c.accentStrong)),
+                      )
+                    : null,
               ),
             ],
+            const SizedBox(height: 8),
+            _card(
+              on: _otherOn,
+              icon: DsIcons.chat,
+              title: '기타 · 직접 적기',
+              desc: '하고 싶은 걸 적으면 알아서 읽고 목표를 맞춰요',
+              onTap: () {
+                haptic(6);
+                setState(() {
+                  _otherOn = !_otherOn;
+                  _reread();
+                });
+              },
+            ),
           ]),
         ),
+        if (_otherOn)
+          DsCard(gap: 12, children: [
+            DsField(
+              label: '바꾸고 싶은 것을 편하게 적어 주세요',
+              child: TextField(
+                controller: _text,
+                autofocus: true,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 300,
+                style: DsText.body.copyWith(color: c.ink),
+                decoration: dsInput(context, hint: '예: 6시 반에 일어나고 저녁 8시에 30분 달리기').copyWith(counterText: ''),
+                onChanged: (_) => setState(_reread),
+              ),
+            ),
+            if (!typed)
+              ChipWrap(children: [
+                for (final e in goalExamples)
+                  DsChip(
+                    label: e,
+                    selected: false,
+                    onTap: () => setState(() {
+                      _text.text = e;
+                      _reread();
+                    }),
+                  ),
+              ])
+            else
+              Semantics(
+                liveRegion: true,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  LabelText(r.found.isNotEmpty ? '이렇게 읽고 위 목표에 반영했어요' : '아직 읽은 목표가 없어요'),
+                  if (r.found.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
+                      for (final f in r.found) Pill(f.text, kind: _removed.contains(f.focus) ? PillKind.gray : PillKind.accent),
+                    ]),
+                  ],
+                  if (r.unknown.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    LabelText("'${r.unknown.join("', '")}'${_hasFinal(r.unknown.last) ? '은' : '는'} 아직 일정에 자동으로 넣지 못해요. 시작한 뒤 할 일로 넣을 수 있어요."),
+                  ],
+                ]),
+              ),
+          ]),
         if (_on(GoalFocus.wake) || _on(GoalFocus.sleep) || _on(GoalFocus.exercise))
           DsCard(gap: 14, children: [
-            if (_on(GoalFocus.wake)) TimeField(label: '목표 기상 시각', value: _wake, onChanged: (v) => setState(() => _wake = v)),
-            if (_on(GoalFocus.sleep)) HoursField(label: '목표 수면 시간', minutes: _sleep, minHours: 5, maxHours: 10, onChanged: (v) => setState(() => _sleep = v)),
+            if (_on(GoalFocus.wake)) TimeField(label: '목표 기상 시각', value: _wake, onChanged: (v) => setState(() => _wakeIn = v)),
+            if (_on(GoalFocus.sleep)) HoursField(label: '목표 수면 시간', minutes: _sleep, minHours: 5, maxHours: 10, onChanged: (v) => setState(() => _sleepIn = v)),
             if (_on(GoalFocus.exercise))
               DsField(
-                label: '운동 시간',
+                label: '운동 시간${r.exerciseTitle != null && r.exerciseTitle != '운동' ? ' · ${r.exerciseTitle}' : ''}',
                 child: ChipWrap(children: [
-                  for (final m in const [15, 30, 45, 60]) DsChip(label: '$m분', selected: _ex == m, onTap: () => setState(() => _ex = m)),
+                  for (final m in exChoices) DsChip(label: '$m분', selected: _ex == m, onTap: () => setState(() => _exIn = m)),
                 ]),
               ),
             if (_on(GoalFocus.wake)) LabelText('지금 기상이 ${formatClock(_wake)}보다 30분 넘게 늦으면, 한 번에 바꾸지 않고 매주 30분씩 당겨요.'),
@@ -263,16 +385,34 @@ class _GoalStepState extends State<GoalStep> {
       ],
       footer: BackNextRow(
         onBack: widget.onBack,
-        nextLabel: _sel.isNotEmpty ? '${_sel.length}개 목표로 다음' : '하나 이상 골라 주세요',
-        onNext: _sel.isEmpty
+        nextLabel: sel.isNotEmpty ? '${sel.length}개 목표로 다음' : '하나 이상 골라 주세요',
+        onNext: sel.isEmpty
             ? null
             : () {
-                context.store.setIntent(focus: [..._sel], wake: _wake, sleepMinutes: _sleep, exerciseMinutes: _ex);
+                final ex = sel.contains(GoalFocus.exercise);
+                final note = _text.text.trim();
+                context.store.setIntent(
+                  focus: sel,
+                  wake: _wake,
+                  sleepMinutes: _sleep,
+                  exerciseMinutes: _ex,
+                  exerciseTitle: ex ? r.exerciseTitle : null,
+                  exerciseStart: ex ? r.exerciseStart : null,
+                  note: _otherOn && note.isNotEmpty ? note : null,
+                );
                 widget.onNext();
               },
       ),
     );
   }
+}
+
+/// 마지막 글자에 받침이 있는지(조사 고르기).
+bool _hasFinal(String word) {
+  final w = word.trim();
+  if (w.isEmpty) return false;
+  final c = w.codeUnitAt(w.length - 1);
+  return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 != 0;
 }
 
 // ---------------------------------------------------------------------------

@@ -350,19 +350,47 @@ enum GoalFocus {
 }
 
 class GoalIntent {
-  const GoalIntent({required this.focus, required this.wake, required this.sleepMinutes, required this.exerciseMinutes, required this.setAt});
+  const GoalIntent({
+    required this.focus,
+    required this.wake,
+    required this.sleepMinutes,
+    required this.exerciseMinutes,
+    this.exerciseTitle,
+    this.exerciseStart,
+    this.note,
+    required this.setAt,
+  });
   final List<GoalFocus> focus;
   final int wake;
   final int sleepMinutes;
   final int exerciseMinutes;
+
+  /// '기타'에 적은 글에서 읽은 운동 이름(예: 달리기)과 시각(자정 기준 분).
+  final String? exerciseTitle;
+  final int? exerciseStart;
+
+  /// '기타'에 적은 글(이 기기에만 둔다, 지표로 내보내지 않는다).
+  final String? note;
   final DateTime setAt;
 
-  Json toJson() => {'focus': [for (final f in focus) f.name], 'wake': wake, 'sleepMinutes': sleepMinutes, 'exerciseMinutes': exerciseMinutes, 'setAt': encodeDate(setAt)};
+  Json toJson() => {
+        'focus': [for (final f in focus) f.name],
+        'wake': wake,
+        'sleepMinutes': sleepMinutes,
+        'exerciseMinutes': exerciseMinutes,
+        if (exerciseTitle != null) 'exerciseTitle': exerciseTitle,
+        if (exerciseStart != null) 'exerciseStart': exerciseStart,
+        if (note != null) 'note': note,
+        'setAt': encodeDate(setAt),
+      };
   factory GoalIntent.fromJson(Json j) => GoalIntent(
         focus: [for (final n in _ls(j['focus'])) ...GoalFocus.values.where((f) => f.name == n)],
         wake: _i(j['wake'], 420),
         sleepMinutes: _i(j['sleepMinutes'], 420),
         exerciseMinutes: _i(j['exerciseMinutes'], 30),
+        exerciseTitle: _sn(j['exerciseTitle']),
+        exerciseStart: _in(j['exerciseStart']),
+        note: _sn(j['note']),
         setAt: _d(j['setAt']),
       );
 }

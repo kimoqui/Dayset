@@ -935,7 +935,10 @@ export function setIntent(intent: Omit<GoalIntent, 'setAt'>): void {
   set((s) => {
     // 고른 목표를 기본 목표에도 바로 반영한다(기록 없이 바로 설정하는 길에서도 쓰도록).
     const goals = { ...s.goals, wake: intent.wake, sleepMinutes: intent.sleepMinutes };
-    if (intent.focus.includes('exercise')) goals.exercise = { ...(s.goals.exercise ?? { title: '운동', activity: 'exercise', start: 20 * 60 + 30, minutes: 30 }), minutes: intent.exerciseMinutes };
+    if (intent.focus.includes('exercise')) {
+      const base = s.goals.exercise ?? { title: '운동', activity: 'exercise' as const, start: 20 * 60 + 30, minutes: 30 };
+      goals.exercise = { ...base, minutes: intent.exerciseMinutes, title: intent.exerciseTitle ?? base.title, start: intent.exerciseStart ?? base.start };
+    }
     return { ...s, goals, intent: { ...intent, setAt: t }, metrics: addEvent(firstTouch(s, t), t, 'goal_set', intent.focus.join(',')) };
   });
 }
