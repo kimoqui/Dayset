@@ -235,6 +235,17 @@ export async function resetPassword(email: string): Promise<void> {
   await client.resetPassword(email);
 }
 
+/** 로그인했으면 서버 AI에 말을 보낸다. 로그인 전·서버 오류·시간 초과면 null(화면은 기기 안 규칙으로 읽는다). */
+export async function askChat(text: string, context: unknown, timeoutMs = 12_000): Promise<unknown | null> {
+  if (!session || !client.ready) return null;
+  try {
+    const s = await fresh();
+    return await Promise.race([client.askChat(s, text, context), new Promise<null>((r) => setTimeout(() => r(null), timeoutMs))]);
+  } catch {
+    return null;
+  }
+}
+
 /** 서버에 저장된 기록을 지운다(이 기기 기록은 그대로). 다음 동기화 때 이 기기 기록을 새로 올린다. */
 export async function deleteRemote(): Promise<void> {
   const s = await fresh();

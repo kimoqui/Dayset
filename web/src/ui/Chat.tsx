@@ -2,7 +2,9 @@
 // 바로 바꾸지 않는다: 읽은 내용과 바뀌는 일정을 먼저 보여 주고, '바꾸기'를 눌러야 적용한다(15초 되돌리기).
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { aiContext, readAiReply } from '../app/aiChat';
 import { CHAT_EXAMPLES, interpretChat } from '../app/chatCommand';
+import { askChat, cloudView } from '../app/cloudSync';
 import { describeEdit, type EditScope, habitOn, previewEdits, type ScheduleEdit } from '../app/edits';
 import type { AppState } from '../app/state';
 import { applyEdits, getState, now as clockNow } from '../app/store';
@@ -56,16 +58,29 @@ export function ChatSheet({ s, onClose, toast }: { s: AppState; onClose: () => v
     { id: msgSeq++, who: 'bot', text: '일정을 어떻게 바꿀까요? 말하듯이 적어 주세요. 바꾸기 전에 무엇이 바뀌는지 먼저 보여 드릴게요.' },
   ]);
   const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const ai = !!cloudView().session;
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), [msgs]);
+  useEffect(() => end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), [msgs, busy]);
 
-  const send = (raw: string) => {
+  const send = async (raw: string) => {
     const q = raw.trim();
-    if (!q) return;
+    if (!q || busy) return;
     haptic(6);
-    const r = interpretChat(q, getState(), clockNow());
-    setMsgs((m) => [...m, { id: msgSeq++, who: 'me', text: q }, { id: msgSeq++, who: 'bot', text: r.reply, edits: r.edits.length ? r.edits : undefined, state: r.edits.length ? 'ask' : undefined }]);
     setText('');
+    setMsgs((m) => [...m, { id: msgSeq++, who: 'me', text: q }]);
+    // 로그인했으면 AI(Claude)가 먼저 읽고, 안 되면 기기 안 규칙으로 읽는다.
+    let r = null;
+    if (ai) {
+      setBusy(true);
+      const t = clockNow();
+      const raw2 = await askChat(q, aiContext(getState(), t));
+      r = raw2 == null ? null : readAiReply(raw2, getState(), clockNow());
+      setBusy(false);
+    }
+    r ??= interpretChat(q, getState(), clockNow());
+    const reading = r;
+    setMsgs((m) => [...m, { id: msgSeq++, who: 'bot', text: reading.reply, edits: reading.edits.length ? reading.edits : undefined, state: reading.edits.length ? 'ask' : undefined }]);
   };
 
   const decide = (id: number, ok: boolean) => {
@@ -107,11 +122,16 @@ export function ChatSheet({ s, onClose, toast }: { s: AppState; onClose: () => v
             )}
           </div>
         ))}
+        {busy && (
+          <div className="chat-msg bot">
+            <span className="chat-bubble">읽는 중…</span>
+          </div>
+        )}
         <div ref={end} />
       </div>
       <div className="chips">
         {CHAT_EXAMPLES.slice(0, 4).map((e) => (
-          <button key={e} type="button" className="chip" onClick={() => send(e)}>
+          <button key={e} type="button" className="chip" disabled={busy} onClick={() => void send(e)}>
             {e}
           </button>
         ))}
@@ -123,14 +143,16 @@ export function ChatSheet({ s, onClose, toast }: { s: AppState; onClose: () => v
           maxLength={200}
           placeholder="예: 내일 운동 7시로 옮겨줘"
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && send(text)}
+          onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && void send(text)}
           aria-label="바꿀 내용"
         />
-        <button type="button" className="btn primary square" style={{ width: 44, padding: 0 }} aria-label="보내기" disabled={!text.trim()} onClick={() => send(text)}>
+        <button type="button" className="btn primary square" style={{ width: 44, padding: 0 }} aria-label="보내기" disabled={!text.trim() || busy} onClick={() => void send(text)}>
           <Icon name="forward" size={18} />
         </button>
       </div>
-      <span className="t-label">지금은 앱 안에서 규칙으로 읽어요. 서버를 붙이면 같은 창에서 AI(Claude)가 읽어요.</span>
+      <span className="t-label">
+        {ai ? 'AI(Claude)가 말과 7일 일정 요약을 읽어요. 연결이 안 되면 기기 안 규칙으로 읽어요.' : '지금은 기기 안 규칙으로 읽어요. 로그인하면 AI(Claude)가 읽어요.'}
+      </span>
     </Sheet>
   );
 }
