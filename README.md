@@ -4,7 +4,7 @@
 
 ## 바로 열기 (웹 앱)
 
-**https://kimoqui.github.io/dayset/**
+**https://kimoqui.github.io/Dayset/**
 
 휴대폰에서 열고 브라우저 메뉴의 **홈 화면에 추가**를 누르면 앱처럼 열린다. 기록은 그 기기 브라우저에만 저장된다(설정 → 데이터 → 백업 내보내기로 옮길 수 있다).
 
