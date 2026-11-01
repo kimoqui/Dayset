@@ -1,0 +1,11 @@
+{
+  "name": "DaySet",
+  "short_name": "DaySet",
+  "description": "자동으로 짜주는 일정으로 편하게 생활습관 잡기",
+  "lang": "ko",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0D1220",
+  "theme_color": "#0D1220",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

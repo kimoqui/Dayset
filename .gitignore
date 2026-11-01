@@ -1,0 +1,6 @@
+node_modules/
+web/dist/
+web/dist-single/
+.dart_tool/
+app/build/
+.DS_Store
