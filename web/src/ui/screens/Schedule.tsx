@@ -12,12 +12,14 @@ import {
   isBefore,
   koreanDate,
 } from '../../engine/models';
-import { evaluate, planFor } from '../../app/derive';
+import { effectiveGoals, evaluate, planFor } from '../../app/derive';
 import { deleteEvent, newId, regenerate, saveEvent } from '../../app/store';
 import type { AppState } from '../../app/state';
 import { blockColor, Icon, kindLabel, Segmented, Sheet } from '../kit';
 import { AddEventSheet } from '../AddEvent';
 import { CalendarSheet } from '../CalendarConnect';
+import { ChatSheet, HabitEditSheet, WakeEditSheet } from '../Chat';
+import { dayLabel as labelOf } from '../../app/edits';
 import { notifyPlan, type ToastFn } from './Tasks';
 
 interface Row {
@@ -30,6 +32,8 @@ interface Row {
   reason?: string;
   outcome?: Outcome;
   adjusted?: boolean;
+  /** 눌러서 바꿀 수 있는 조각: 습관 이름 또는 기상. */
+  edit?: { kind: 'habit'; title: string } | { kind: 'wake' };
 }
 
 const OUTCOME_TAG: Partial<Record<Outcome, string>> = { achieved: '달성', missed: '놓침', estimated: '기록 없음' };
@@ -40,6 +44,8 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
   const [openReason, setOpenReason] = useState<string | null>(null);
   const [editing, setEditing] = useState<FixedEvent | null>(null);
   const [importing, setImporting] = useState(false);
+  const [chat, setChat] = useState(false);
+  const [editRow, setEditRow] = useState<Row['edit'] | null>(null);
   const todayKey = dateKey(now);
   const tomorrowKey = dateKey(addDays(now, 1));
   const key = day === 'today' ? todayKey : tomorrowKey;
@@ -50,7 +56,7 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
 
   const rows: Row[] = [];
   if (day === 'tomorrow') {
-    rows.push({ key: 'wake', time: plan.wake, title: '기상 알람', tag: '알람', color: 'var(--alarm)', reason: plan.alarms[0].reason });
+    rows.push({ key: 'wake', time: plan.wake, title: '기상 알람', tag: '알람', color: 'var(--alarm)', reason: plan.alarms[0].reason, edit: { kind: 'wake' } });
   }
   for (const b of plan.blocks) {
     if (b.activity === 'sleep') continue;
@@ -66,6 +72,7 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
       color: blockColor(b),
       outcome,
       adjusted: b.adjusted,
+      edit: b.kind === 'habit' && isAfter(b.end, now) ? { kind: 'habit', title: b.title } : undefined,
     });
   }
   const bed = day === 'today' ? tomorrowPlan : null;
@@ -96,9 +103,14 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
             <Icon name="refresh" size={14} /> 시연
           </button>
         </span>
-        <button type="button" className="btn small" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={16} /> 캘린더 일정
-        </button>
+        <span className="row" style={{ gap: 6 }}>
+          <button type="button" className="btn small" onClick={() => setAdding(true)}>
+            <Icon name="plus" size={16} /> 일정
+          </button>
+          <button type="button" className="btn primary small" onClick={() => setChat(true)}>
+            <Icon name="chat" size={16} /> 말로 바꾸기
+          </button>
+        </span>
       </div>
       <Segmented
         label="날짜"
@@ -139,6 +151,7 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
         </p>
       ))}
 
+      <p className="t-label" style={{ margin: 0 }}>식사·운동·기상은 눌러서 바꿀 수 있어요. ‘말로 바꾸기’로 한 번에 바꿔도 돼요.</p>
       <section className="card list" aria-label={`${day === 'today' ? '오늘' : '내일'} 일정`}>
         {rows.map((r) => {
           const isNow = day === 'today' && r.end != null && !isBefore(now, r.time) && isBefore(now, r.end);
@@ -151,7 +164,12 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
                   {formatHm(r.time)}
                 </span>
                 <span className="bar" style={{ background: r.color }} />
-                {r.reason ? (
+                {r.edit && !r.reason ? (
+                  <button type="button" className="linklike grow ellipsis" onClick={() => setEditRow(r.edit!)}>
+                    {r.title}
+                    <span className="edit-hint">바꾸기</span>
+                  </button>
+                ) : r.reason ? (
                   <button type="button" className="linklike grow" aria-expanded={openReason === r.key} onClick={() => setOpenReason(openReason === r.key ? null : r.key)}>
                     {r.title} <span className="t-small">· 근거</span>
                   </button>
@@ -163,6 +181,11 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
               {openReason === r.key && r.reason && (
                 <p className="t-label" style={{ margin: '0 0 10px 56px' }}>
                   {r.reason}
+                  {r.edit && (
+                    <button type="button" className="btn ghost small" style={{ marginLeft: 4, height: 28 }} onClick={() => setEditRow(r.edit!)}>
+                      바꾸기
+                    </button>
+                  )}
                 </p>
               )}
             </div>
@@ -229,6 +252,11 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
         <EventSheet event={editing} askTravel={!s.asked.travel && !editing.id} travel={s.settings.travelMinutes} onClose={() => setEditing(null)} toast={toast} />
       )}
       {importing && <CalendarSheet s={s} onClose={() => setImporting(false)} toast={toast} />}
+      {chat && <ChatSheet s={s} onClose={() => setChat(false)} toast={toast} />}
+      {editRow?.kind === 'habit' && <HabitEditSheet s={s} day={key} title={editRow.title} dayLabel={labelOf(key, now)} onClose={() => setEditRow(null)} toast={toast} />}
+      {editRow?.kind === 'wake' && (
+        <WakeEditSheet s={s} day={key} current={effectiveGoals(s, key).wake} dayLabel={labelOf(key, now)} onClose={() => setEditRow(null)} toast={toast} />
+      )}
     </div>
   );
 }

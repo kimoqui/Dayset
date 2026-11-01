@@ -49,6 +49,17 @@ export interface TaskCredit {
 export interface DayOverride {
   dinnerShift?: number;
   notes?: string[];
+  /** 그날만 바꾼 기상 시각(자정 기준 분). */
+  wake?: number;
+  /** 그날만 바꾼 습관(이름 → 시작·길이·빼기). */
+  habits?: Record<string, HabitEdit>;
+}
+
+/** 일정 탭·채팅에서 그날만 바꾼 습관. */
+export interface HabitEdit {
+  start?: number;
+  minutes?: number;
+  skip?: boolean;
 }
 
 /** 저장한 하루 일정. 그 날이 시작되면(또는 전날 밤 확정하면) 고정한다. */

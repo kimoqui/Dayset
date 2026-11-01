@@ -31,5 +31,7 @@
 - 걸리는 시간 보정: `src/app/duration.ts`(이름 2건·종류 3건, 중앙값, 0.5~2배, 이상값 제외). 일정 계산은 `derive.tasksForPlanning`에서 `plannedMinutes`로. 잡은 시간을 다 써도 자동 완료하지 않는다.
 - 캘린더: `src/app/ics.ts`(파일 읽기), `src/app/gcal.ts`(구글), `src/app/calendarSync.ts`(동기화·오류 처리), 화면 `src/ui/CalendarConnect.tsx`. 실패해도 이전에 가져온 일정은 지우지 않는다.
 - 비정상 상황 목록은 README '비정상 상황 대처'. 새 실패 경로를 만들면 거기와 `__tests__/auto.test.ts`에 같이 넣는다.
+- 일정 바꾸기: `src/app/edits.ts`(바꾸기 목록·적용·미리보기, 그날만=overrides / 매일=goals), 채팅 읽기 `src/app/chatCommand.ts`(규칙, 나중에 서버 AI가 같은 목록을 만든다), 화면 `src/ui/Chat.tsx`. 바로 바꾸지 않고 미리보기 → '바꾸기'.
+- 계정 연동: `src/app/cloud.ts`(Supabase HTTP·동기화 판단), `cloudSync.ts`(실행·충돌), `cloudConfig.ts`(주소·공개 키), 화면 `src/ui/Account.tsx`.
 - 목표 '기타' 글 읽기: `src/app/goalText.ts`(기기 안 규칙, 읽지 못한 부분은 그대로 보여 준다). Flutter는 `lib/app/goal_text.dart`.
 - 프리뷰 준비: 처음 목표·동의·알림 화면 `src/ui/Preview.tsx`, 일정 체크 `src/app/nowCheck.ts` + 팝업 `src/ui/NowDock.tsx`, 알림·푸시 토큰 `src/ui/notify.ts` + `public/sw.js`, 베타 지표 `src/app/metrics.ts`(이름·시각·제목·위치는 넣지 않는다). 동의(`consent.health`) 없이는 기록 화면으로 들어가지 않는다.

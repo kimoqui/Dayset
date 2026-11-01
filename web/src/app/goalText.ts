@@ -30,7 +30,7 @@ const NATIVE: [string, number][] = [
 ];
 
 /** '여섯 시', '일곱 시간' → '6시', '7시간' */
-function nativeNumbers(text: string): string {
+export function nativeNumbers(text: string): string {
   let t = text;
   for (const [w, n] of NATIVE) t = t.replace(new RegExp(`${w}\\s*(시간|시)`, 'g'), `${n}$1`);
   return t;
@@ -39,7 +39,7 @@ function nativeNumbers(text: string): string {
 const SPLIT = /[,，.。!?！？\n·;/]|그리고|또한|(?<=[가-힣])(?:하고|고|며|면서|서|랑|이랑)\s+/;
 const FILLER = /(하고\s*싶어요?|하고\s*싶다|싶어요?|싶다|싶음|싶고|하기|해요|할래요?|매일|매일매일|꾸준히|좀|더|많이|습관|만들기|만들고|정도|쯤|이상|목표|잘|제대로|최대한|있게|되게|되기|수\s*있게|요(?=\s|$)|\s)+/g;
 
-const EXERCISES: [RegExp, string][] = [
+export const EXERCISES: [RegExp, string][] = [
   [/러닝|달리기|조깅|뛰기|달리/, '달리기'],
   [/헬스|웨이트|근력|근육/, '헬스'],
   [/필라테스/, '필라테스'],

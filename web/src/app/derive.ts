@@ -12,6 +12,7 @@ import {
   formatClock,
   fromKey,
   type HabitGoals,
+  type HabitSlot,
   isAfter,
   isBefore,
   isEstimate,
@@ -30,13 +31,20 @@ import { plannedMinutes } from './duration';
 export function effectiveGoals(s: AppState, key: string): HabitGoals {
   const g = s.goals;
   const c = s.correction;
-  const wake = c && c.plan.status === 'active' ? weekTarget(c.plan) : g.wake;
-  const shift = s.overrides[key]?.dinnerShift ?? 0;
-  return {
-    ...g,
-    wake,
-    meals: g.meals.map((m) => (shift && m.title.includes('저녁') ? { ...m, start: m.start + shift } : m)),
+  const o = s.overrides[key];
+  const wake = o?.wake ?? (c && c.plan.status === 'active' ? weekTarget(c.plan) : g.wake);
+  const shift = o?.dinnerShift ?? 0;
+  const edit = (slot: HabitSlot): HabitSlot | null => {
+    const e = o?.habits?.[slot.title];
+    if (!e) return slot;
+    if (e.skip) return null;
+    return { ...slot, start: e.start ?? slot.start, minutes: e.minutes ?? slot.minutes };
   };
+  const meals = g.meals
+    .map((m) => (shift && m.title.includes('저녁') ? { ...m, start: m.start + shift } : m))
+    .map(edit)
+    .filter((m): m is HabitSlot => m != null);
+  return { ...g, wake, meals, exercise: g.exercise ? edit(g.exercise) : null };
 }
 
 const creditedIds = (s: AppState): Set<string> => new Set(s.credits.map((c) => c.blockId));

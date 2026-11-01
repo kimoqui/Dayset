@@ -43,6 +43,7 @@ import { addEvent, addOpen } from './metrics';
 import type { ImportedEvent } from './ics';
 import type { Friend } from './social';
 import { snapshot } from './priorityModel';
+import { applyEdit, type ScheduleEdit } from './edits';
 
 // ---------------------------------------------------------------------------
 // 시계. 주소에 ?t=2026-10-19T07:00 을 붙이면 그 시각부터 흐른다(시험용).
@@ -724,6 +725,15 @@ export function undoPlanChange(): boolean {
   replaceState(planUndo!.state);
   planUndo = null;
   return true;
+}
+
+/** 일정 탭·채팅에서 고른 바꾸기를 적용하고 남은 일정을 다시 짠다(15초 되돌리기). */
+export function applyEdits(edits: ScheduleEdit[]): PlanChange {
+  return changeAndReplan((s, t) => {
+    let next = s;
+    for (const e of edits) next = applyEdit(next, e, t);
+    return { ...next, metrics: addEvent(next.metrics, t, 'schedule_edit', edits.map((e) => e.kind).join(',')) };
+  });
 }
 
 export function saveTask(task: TaskItem): PlanChange {

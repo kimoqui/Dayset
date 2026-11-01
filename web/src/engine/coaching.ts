@@ -332,6 +332,9 @@ export const objectParticle = (word: string): string => (hasBatchim(word) ? '을
 /** 받침이 있으면 '이', 없으면 '가'. */
 export const subjectParticle = (word: string): string => (hasBatchim(word) ? '이' : '가');
 
+/** 받침이 있으면 '은', 없으면 '는'. */
+export const topicParticle = (word: string): string => (hasBatchim(word) ? '은' : '는');
+
 export function hasBatchim(word: string): boolean {
   if (!word) return false;
   const code = word.codePointAt(word.length - 1)!;
