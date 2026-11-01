@@ -1,0 +1,65 @@
+# 안드로이드 APK 만들기: app/ 이 바뀌면 빌드해서 Releases에 올린다.
+# 받는 주소(늘 최신): https://github.com/kimoqui/Dayset/releases/latest/download/DaySet.apk
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 안드로이드 틀 만들기
+        run: |
+          flutter create --org com.dayset --project-name dayset --platforms android .
+          rm -f test/widget_test.dart
+          # 앱 이름, 인터넷 권한(계정 동기화)
+          sed -i 's/android:label="dayset"/android:label="DaySet"/' android/app/src/main/AndroidManifest.xml
+          grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml || \
+            sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          # 늘 같은 베타 키로 서명(업데이트할 때 기록이 지워지지 않게)
+          mkdir -p ~/.android && cp android-signing/dayset-beta.keystore ~/.android/debug.keystore
+
+      - run: flutter pub get
+
+      - name: 테스트
+        run: flutter test
+        continue-on-error: true
+
+      - name: APK 빌드
+        run: |
+          flutter build apk --release --build-number ${{ github.run_number }}
+          cp build/app/outputs/flutter-apk/app-release.apk ../DaySet.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: DaySet 안드로이드 베타 ${{ github.run_number }}
+          body: |
+            휴대폰에서 DaySet.apk를 눌러 설치한다(처음 한 번 '출처를 알 수 없는 앱 설치 허용' 필요).
+            커밋: ${{ github.sha }}
+          files: DaySet.apk
+          make_latest: true
