@@ -21,15 +21,29 @@ List<T> stableSorted<T>(Iterable<T> xs, int Function(T a, T b) cmp) {
 bool _isAfter(DateTime a, DateTime b) => a.isAfter(b);
 bool _isBefore(DateTime a, DateTime b) => a.isBefore(b);
 
-/// 그 날 일정에 쓸 목표. 교정 중이면 이번 주 기상 목표, 코칭으로 바꾼 저녁 시각을 반영한다.
+/// 그 날 일정에 쓸 목표. 그날만 바꾼 기상·습관, 교정 중이면 이번 주 기상 목표, 코칭으로 바꾼 저녁 시각을 반영한다.
 HabitGoals effectiveGoals(AppState s, String key) {
   final g = s.goals;
   final c = s.correction;
-  final wake = c != null && c.plan.status == CorrectionStatus.active ? ClockTime(c.plan.weekTarget) : g.wake;
-  final shift = s.overrides[key]?.dinnerShift ?? 0;
+  final o = s.overrides[key];
+  final wake = o?.wake != null ? ClockTime(o!.wake!) : (c != null && c.plan.status == CorrectionStatus.active ? ClockTime(c.plan.weekTarget) : g.wake);
+  final shift = o?.dinnerShift ?? 0;
+  HabitSlot? edit(HabitSlot slot) {
+    final e = o?.habits[slot.title];
+    if (e == null) return slot;
+    if (e.skip) return null;
+    return slot.copyWith(start: e.start != null ? ClockTime(e.start!) : null, minutes: e.minutes);
+  }
+
+  final ex = g.exercise == null ? null : edit(g.exercise!);
   return g.copyWith(
     wake: wake,
-    meals: [for (final m in g.meals) shift != 0 && m.title.contains('저녁') ? m.copyWith(start: ClockTime(m.start.minutes + shift)) : m],
+    meals: [
+      for (final m in g.meals)
+        if (edit(shift != 0 && m.title.contains('저녁') ? m.copyWith(start: ClockTime(m.start.minutes + shift)) : m) case final x?) x,
+    ],
+    exercise: ex,
+    clearExercise: ex == null,
   );
 }
 

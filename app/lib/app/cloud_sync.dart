@@ -243,6 +243,17 @@ class CloudSync {
 
   Future<void> resetPassword(String email) => client.resetPassword(email);
 
+  /// 로그인했으면 서버 AI에 말을 보낸다. 로그인 전·서버 오류·시간 초과면 null(화면은 기기 안 규칙으로 읽는다).
+  Future<Object?> askChat(String text, Object? context, {Duration timeout = const Duration(seconds: 12)}) async {
+    if (session == null || !client.ready) return null;
+    try {
+      final s = await _fresh();
+      return await client.askChat(s, text, context).timeout(timeout);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 서버에 저장된 기록을 지운다(이 기기 기록은 그대로). 다음 동기화 때 이 기기 기록을 새로 올린다.
   Future<void> deleteRemote() async {
     final s = await _fresh();

@@ -44,7 +44,8 @@ const _native = [
   ('여섯', 6), ('다섯', 5), ('네', 4), ('세', 3), ('두', 2), ('한', 1),
 ];
 
-String _nativeNumbers(String text) {
+/// 한글 수 말(한 시간·세 시)을 숫자로. 채팅 읽기도 쓴다.
+String nativeNumbers(String text) {
   var t = text;
   for (final (w, n) in _native) {
     t = t.replaceAllMapped(RegExp('$w\\s*(시간|시)'), (m) => '$n${m[1]}');
@@ -55,7 +56,8 @@ String _nativeNumbers(String text) {
 final _split = RegExp(r'[,，.。!?！？\n·;/]|그리고|또한|(?<=[가-힣])(?:하고|고|며|면서|서|랑|이랑)\s+');
 final _filler = RegExp(r'(하고\s*싶어요?|하고\s*싶다|싶어요?|싶다|싶음|싶고|하기|해요|할래요?|매일|매일매일|꾸준히|좀|더|많이|습관|만들기|만들고|정도|쯤|이상|목표|잘|제대로|최대한|있게|되게|되기|수\s*있게|요(?=\s|$)|\s)+');
 
-final _exercises = <(RegExp, String)>[
+/// 운동 이름 말 → 표시 이름. 채팅 읽기도 쓴다.
+final goalExercises = <(RegExp, String)>[
   (RegExp(r'러닝|달리기|조깅|뛰기|달리'), '달리기'),
   (RegExp(r'헬스|웨이트|근력|근육'), '헬스'),
   (RegExp(r'필라테스'), '필라테스'),
@@ -116,7 +118,7 @@ String _hoursText(int min) => min % 60 != 0 ? '${min ~/ 60}시간 ${min % 60}분
 
 GoalReading readGoalText(String input) {
   final r = GoalReading();
-  var text = _nativeNumbers(input.trim());
+  var text = nativeNumbers(input.trim());
   if (text.length > 300) text = text.substring(0, 300);
   if (text.isEmpty) return r;
   void add(GoalFocus f) {
@@ -135,7 +137,7 @@ GoalReading readGoalText(String input) {
     }
 
     // 운동
-    final ex = _exercises.where((e) => e.$1.hasMatch(clause)).firstOrNull;
+    final ex = goalExercises.where((e) => e.$1.hasMatch(clause)).firstOrNull;
     if (ex != null) {
       add(GoalFocus.exercise);
       hit = true;

@@ -213,6 +213,10 @@ class CloudClient {
   }
 
   Future<void> deleteState(Session s) => _call('/rest/v1/dayset_state?user_id=eq.${s.userId}', method: 'DELETE', token: s.accessToken);
+
+  /// 말로 일정 바꾸기: 서버 AI 함수(dayset-chat)에 말과 일정 요약을 보내고 바꾸기 목록(JSON)을 받는다.
+  Future<Object?> askChat(Session s, String text, Object? context) async =>
+      (await _call('/functions/v1/dayset-chat', method: 'POST', token: s.accessToken, body: {'text': text, 'context': context})).json;
 }
 
 // ---------------------------------------------------------------------------

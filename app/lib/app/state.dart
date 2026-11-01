@@ -127,15 +127,48 @@ class TaskCredit {
   factory TaskCredit.fromJson(Json j) => TaskCredit(day: _s(j['day']), blockId: _s(j['blockId']), taskId: _s(j['taskId']), minutes: _i(j['minutes']));
 }
 
+/// 그날만 바꾼 습관(식사·운동) 값. 웹 HabitEdit과 같다.
+class HabitEdit {
+  const HabitEdit({this.start, this.minutes, this.skip = false});
+  final int? start;
+  final int? minutes;
+  final bool skip;
+
+  Json toJson() => {if (start != null) 'start': start, if (minutes != null) 'minutes': minutes, if (skip) 'skip': true};
+  factory HabitEdit.fromJson(Json j) => HabitEdit(start: _in(j['start']), minutes: _in(j['minutes']), skip: _b(j['skip']));
+
+  @override
+  bool operator ==(Object other) => other is HabitEdit && other.start == start && other.minutes == minutes && other.skip == skip;
+  @override
+  int get hashCode => Object.hash(start, minutes, skip);
+}
+
 class DayOverride {
-  const DayOverride({this.dinnerShift, this.notes = const []});
+  const DayOverride({this.dinnerShift, this.notes = const [], this.wake, this.habits = const {}});
   final int? dinnerShift;
   final List<String> notes;
 
-  DayOverride copyWith({int? dinnerShift, List<String>? notes}) => DayOverride(dinnerShift: dinnerShift ?? this.dinnerShift, notes: notes ?? this.notes);
+  /// 그날만 바꾼 기상 목표(자정 기준 분).
+  final int? wake;
 
-  Json toJson() => {if (dinnerShift != null) 'dinnerShift': dinnerShift, if (notes.isNotEmpty) 'notes': notes};
-  factory DayOverride.fromJson(Json j) => DayOverride(dinnerShift: _in(j['dinnerShift']), notes: _ls(j['notes']));
+  /// 그날만 바꾼 습관(이름 → 값).
+  final Map<String, HabitEdit> habits;
+
+  DayOverride copyWith({int? dinnerShift, List<String>? notes, Object? wake = keep, Map<String, HabitEdit>? habits}) =>
+      DayOverride(dinnerShift: dinnerShift ?? this.dinnerShift, notes: notes ?? this.notes, wake: _pick(wake, this.wake), habits: habits ?? this.habits);
+
+  Json toJson() => {
+        if (dinnerShift != null) 'dinnerShift': dinnerShift,
+        if (notes.isNotEmpty) 'notes': notes,
+        if (wake != null) 'wake': wake,
+        if (habits.isNotEmpty) 'habits': {for (final e in habits.entries) e.key: e.value.toJson()},
+      };
+  factory DayOverride.fromJson(Json j) => DayOverride(
+        dinnerShift: _in(j['dinnerShift']),
+        notes: _ls(j['notes']),
+        wake: _in(j['wake']),
+        habits: {for (final e in _m(j['habits']).entries) if (e.value is Map) e.key: HabitEdit.fromJson(_m(e.value))},
+      );
 }
 
 /// 저장한 하루 일정. 그 날이 시작되면(또는 전날 밤 확정하면) 고정한다.

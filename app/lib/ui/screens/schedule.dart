@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/derive.dart';
+import '../../app/edits.dart';
 import '../../app/state.dart';
 import '../../app/store.dart';
 import '../../core/engine/achievement.dart';
@@ -10,14 +11,22 @@ import '../../core/engine/schedule_builder.dart';
 import '../../core/model/models.dart';
 import '../add_event.dart';
 import '../calendar_connect.dart';
+import '../chat.dart';
 import '../kit.dart';
 import '../scope.dart';
 import '../theme.dart';
 
 enum _Day { today, tomorrow }
 
+/// 눌러서 바꿀 수 있는 줄: 습관(이름) 또는 기상(이름 없음).
+class _Edit {
+  const _Edit.habit(String this.title);
+  const _Edit.wake() : title = null;
+  final String? title;
+}
+
 class _Row {
-  const _Row({required this.key, required this.time, this.end, required this.title, required this.tag, required this.color, this.reason, this.outcome, this.adjusted = false});
+  const _Row({required this.key, required this.time, this.end, required this.title, required this.tag, required this.color, this.reason, this.outcome, this.adjusted = false, this.edit});
   final String key;
   final DateTime time;
   final DateTime? end;
@@ -27,6 +36,7 @@ class _Row {
   final String? reason;
   final Outcome? outcome;
   final bool adjusted;
+  final _Edit? edit;
 }
 
 const _outcomeTag = {Outcome.achieved: '달성', Outcome.missed: '놓침', Outcome.estimated: '기록 없음'};
@@ -59,7 +69,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     final rows = <_Row>[];
     if (!today) {
-      rows.add(_Row(key: 'wake', time: plan.wake, title: '기상 알람', tag: '알람', color: c.alarm, reason: plan.alarms.first.reason));
+      rows.add(_Row(key: 'wake', time: plan.wake, title: '기상 알람', tag: '알람', color: c.alarm, reason: plan.alarms.first.reason, edit: const _Edit.wake()));
     }
     for (final b in plan.blocks) {
       if (b.activity == Activity.sleep) continue;
@@ -74,6 +84,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         color: c.block(b),
         outcome: today && ended ? outcomeById[b.id] : null,
         adjusted: b.adjusted,
+        edit: b.kind == BlockKind.habit && !ended ? _Edit.habit(b.title) : null,
       ));
     }
     rows.add(today
@@ -98,8 +109,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           Semantics(header: true, child: Text('일정', style: DsText.title.copyWith(color: c.ink))),
           const SizedBox(width: 8),
           _HintChip(label: '시연', icon: DsIcons.refresh, onTap: () => context.ui.actions.open(AppPage.demo)),
-          const Spacer(),
-          DsButton('캘린더 일정', small: true, icon: DsIcons.plus, onPressed: () => showAddEventSheet(context, day: today ? now : addDays(now, 1))),
+          // 좁은 화면에서는 단추 묶음을 줄여 넘치지 않게 한다.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  DsButton('일정', small: true, icon: DsIcons.plus, onPressed: () => showAddEventSheet(context, day: today ? now : addDays(now, 1))),
+                  const SizedBox(width: 6),
+                  DsButton.primary('말로 바꾸기', small: true, icon: DsIcons.chat, onPressed: () => showChatSheet(context)),
+                ]),
+              ),
+            ),
+          ),
         ]),
       ),
       Segmented<_Day>(
@@ -134,11 +157,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ]),
           ]),
         for (final n in [...plan.notes, ...deferred]) LabelText(n, color: c.miss),
+        const LabelText('식사·운동·기상은 눌러서 바꿀 수 있어요. ‘말로 바꾸기’로 한 번에 바꿔도 돼요.'),
         Semantics(
           container: true,
           label: '${today ? '오늘' : '내일'} 일정',
           child: DsCard(list: true, children: [
-            for (var i = 0; i < sorted.length; i++) _rowView(context, sorted[i], now, today, last: i == sorted.length - 1),
+            for (var i = 0; i < sorted.length; i++) _rowView(context, sorted[i], now, today, key, last: i == sorted.length - 1),
           ]),
         ),
         if (today && view.stored && !view.outdated)
@@ -185,7 +209,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ]);
   }
 
-  Widget _rowView(BuildContext context, _Row r, DateTime now, bool today, {required bool last}) {
+  void _openEdit(BuildContext context, _Edit e, String key, DateTime now) {
+    final label = dayLabel(key, now);
+    final title = e.title;
+    if (title != null) {
+      showHabitEditSheet(context, day: key, title: title, dayLabel: label);
+    } else {
+      showWakeEditSheet(context, day: key, current: effectiveGoals(context.store.state, key).wake.minutes, dayLabel: label);
+    }
+  }
+
+  Widget _rowView(BuildContext context, _Row r, DateTime now, bool today, String key, {required bool last}) {
     final c = context.ds;
     final isNow = today && r.end != null && !now.isBefore(r.time) && now.isBefore(r.end!);
     final tag = isNow ? '지금' : (r.outcome != null ? (_outcomeTag[r.outcome] ?? r.tag) : r.tag);
@@ -203,7 +237,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ]),
             style: DsText.base.copyWith(color: c.ink),
           )
-        : Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: DsText.base.copyWith(color: c.ink));
+        : r.edit != null
+            ? Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: r.title),
+                  TextSpan(text: ' 바꾸기', style: DsText.small.copyWith(color: c.accentStrong, fontWeight: FontWeight.w700)),
+                ]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DsText.base.copyWith(color: c.ink),
+              )
+            : Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: DsText.base.copyWith(color: c.ink));
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
       Semantics(
         expanded: r.reason != null ? open : null,
@@ -215,14 +259,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           tagColor: tagColor,
           now: isNow,
           last: last && !open,
-          onTap: r.reason == null ? null : () => setState(() => _openReason = open ? null : r.key),
+          onTap: r.reason != null
+              ? () => setState(() => _openReason = open ? null : r.key)
+              : (r.edit != null ? () => _openEdit(context, r.edit!, key, now) : null),
           child: title,
         ),
       ),
       if (open)
         Padding(
           padding: const EdgeInsets.fromLTRB(56, 0, 0, 10),
-          child: LabelText(r.reason!),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            LabelText(r.reason!),
+            if (r.edit != null) DsButton('바꾸기', kind: BtnKind.ghost, small: true, onPressed: () => _openEdit(context, r.edit!, key, now)),
+          ]),
         ),
     ]);
   }

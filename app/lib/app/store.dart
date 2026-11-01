@@ -11,6 +11,7 @@ import '../core/engine/now_tracker.dart';
 import '../core/model/models.dart';
 import 'derive.dart';
 import 'duration.dart';
+import 'edits.dart';
 import 'ics.dart';
 import 'metrics.dart';
 import 'priority_model.dart';
@@ -808,6 +809,15 @@ class Store {
           next = next.copyWith(settings: next.settings.copyWith(travelMinutes: travelMinutes), asked: next.asked.copyWith(travel: true));
         }
         return next;
+      });
+
+  /// 일정 바꾸기 목록(일정 탭·채팅)을 적용하고 남은 일정을 다시 짠다(15초 되돌리기).
+  PlanChange applyEdits(List<ScheduleEdit> edits) => _changeAndReplan((s, t) {
+        var next = s;
+        for (final e in edits) {
+          next = applyEdit(next, e, t);
+        }
+        return next.copyWith(metrics: addEvent(next.metrics, t, 'schedule_edit', edits.map((e) => e.kind).join(',')));
       });
 
   PlanChange deleteEvent(String id) => _changeAndReplan((s, _) => s.copyWith(events: s.events.where((e) => e.id != id).toList()).bump());

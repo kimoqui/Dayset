@@ -13,12 +13,16 @@ lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app�
   derive.dart      화면용 계산(일정, 하루 평가, 기간 통계, 관찰, 바뀜 미리보기)
   streak / social / nearby / duration / priority_model / now_check / metrics / nlp / ics / seed / goal_text
   cloud / cloud_sync 계정 연동(Supabase, 웹 cloud.ts·cloudSync.ts와 같은 규칙), cloud_config 서버 주소·공개 키
+  edits.dart       일정 바꾸기 목록·적용·미리보기(그날만=overrides / 매일=goals), Store.applyEdits로 적용
+  chat_command.dart 채팅 글 → 바꾸기 목록(기기 안 규칙)
+  ai_chat.dart     로그인하면 서버 AI(supabase/functions/dayset-chat)가 먼저 읽는다: 보낼 요약·받은 답 검사, 실패하면 규칙
 lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
 lib/ui             화면 — 웹 src/ui와 1:1
   theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)
   kit.dart         공통 부품(아이콘·카드·버튼·세그먼트·스위치·아래 창·입력)
   scope.dart       context.store / context.app / context.ui, 알림 띠, 화면 이동
   app.dart         셸: 탭 6개(밀어서 이동), 일정 체크 띠, 알람 화면, 관찰 안내, 기념일
+  chat.dart        말로 일정 바꾸기 창 + 습관·기상 바꾸기 창(바로 바꾸지 않고 미리보기 → '바꾸기')
   screens/         홈·일정·할 일·기록·소셜·설정 + 저녁 확인·내 하루 보기·시연·처음 설정
 assets/fonts       Pretendard(SIL OFL 1.1, 한글 2,350자 묶음)
 native/            flutter create 뒤 ios·android 폴더에 넣을 위젯 네이티브 코드
