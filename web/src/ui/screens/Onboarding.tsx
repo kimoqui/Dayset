@@ -3,12 +3,14 @@ import { formatClock, type HabitGoals } from '../../engine/models';
 import { demoState } from '../../app/seed';
 import { DEFAULT_GOALS } from '../../app/state';
 import { completeOnboarding, ensureDay, now, replaceState, startObservation, useAppState } from '../../app/store';
+import { AccountSheet } from '../Account';
 import { ConsentPanel, GoalStep, NotifyStep } from '../Preview';
 import { Icon, NumberField, Switch, TimeField } from '../kit';
 
 type Step = 0 | 1 | 2 | 'goal' | 'consent' | 'notify';
 
-export function Onboarding() {
+export function Onboarding({ toast }: { toast: (t: string) => void }) {
+  const [login, setLogin] = useState(false);
   const st = useAppState();
   const [step, setStep] = useState<Step>(0);
   /** 'obs' = 첫날 기록부터, 'direct' = 기록 없이 바로 설정. */
@@ -69,7 +71,7 @@ export function Onboarding() {
             ))}
           </div>
           <p className="t-label" style={{ margin: 0 }}>
-            로컬 버전이에요. 기록은 이 브라우저에만 저장되고 서버로 보내지 않아요.
+            기록은 이 기기에 저장돼요. 계정에 로그인하면 웹과 안드로이드 앱에서 같은 기록을 이어 써요.
           </p>
         </div>
         <div className="stack" style={{ gap: 10 }}>
@@ -104,6 +106,10 @@ export function Onboarding() {
           >
             기록 없이 바로 설정하기
           </button>
+          <button type="button" className="btn ghost small" style={{ alignSelf: 'center' }} onClick={() => setLogin(true)}>
+            계정이 있어요 · 로그인해서 이어 쓰기
+          </button>
+          {login && <AccountSheet onClose={() => setLogin(false)} toast={toast} />}
         </div>
       </div>
     );

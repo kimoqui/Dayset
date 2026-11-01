@@ -8,6 +8,7 @@ import { CalendarSheet } from '../CalendarConnect';
 import { notifyPlan, type ToastFn } from './Tasks';
 import { getClockOffset, now, replaceState, resetAll, setClockOffset, setCorrection, setDurationAuto, setNotify, track, updateGoals, updateSettings } from '../../app/store';
 import { ConsentPanel, MetricsCard, ReportSheet } from '../Preview';
+import { AccountCard, AndroidCard } from '../Account';
 import { enableNotifications } from '../notify';
 import { Icon, NumberField, Segmented, Switch, TimeField, TopBar } from '../kit';
 
@@ -91,6 +92,9 @@ export function Settings({
           </button>
         </div>
       )}
+
+      <AccountCard toast={toast} />
+      <AndroidCard />
 
       <section className="card" aria-label="시연">
         <div className="row between">

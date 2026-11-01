@@ -109,6 +109,12 @@ export function replaceState(next: AppState): void {
   emit();
 }
 
+/** 상태가 바뀔 때마다 부른다(계정 동기화 등 화면 밖에서 듣는 곳). */
+export function subscribe(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
 export function useAppState(): AppState {
   return useSyncExternalStore(
     (l) => {

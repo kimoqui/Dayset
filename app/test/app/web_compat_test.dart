@@ -172,8 +172,15 @@ void main() {
       final store = Store(storage: StateStorage(MemoryStore()));
       store.setFixedClock(now);
       store.setProfileName('앱');
-      expect(() => store.importBackup('{"version": 2}'), throwsA);
-      expect(() => store.importBackup('not json'), throwsA);
+      for (final bad in ['{"version": 2}', 'not json']) {
+        Object? err;
+        try {
+          store.importBackup(bad);
+        } catch (e) {
+          err = e;
+        }
+        expect(err, isA<FormatException>());
+      }
       expect(store.state.profile.name, '앱');
     });
   });

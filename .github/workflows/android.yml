@@ -40,6 +40,9 @@ jobs:
           sed -i 's/android:label="dayset"/android:label="DaySet"/' android/app/src/main/AndroidManifest.xml
           grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml || \
             sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          # 오래된 플러그인도 최신 compileSdk로 빌드
+          cp ci/compile-sdk.gradle android/compile-sdk.gradle
+          if [ -f android/build.gradle.kts ]; then sed -i '1i apply(from = "compile-sdk.gradle")' android/build.gradle.kts; else sed -i "1i apply from: 'compile-sdk.gradle'" android/build.gradle; fi
           # 늘 같은 베타 키로 서명(업데이트할 때 기록이 지워지지 않게)
           mkdir -p ~/.android && cp android-signing/dayset-beta.keystore ~/.android/debug.keystore
 

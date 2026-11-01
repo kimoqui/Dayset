@@ -23,6 +23,7 @@ import { Settings, type Theme } from './screens/Settings';
 import { Stats } from './screens/Stats';
 import { Tasks } from './screens/Tasks';
 import { useCalendarAutoSync } from './CalendarConnect';
+import { ConflictSheet, useCloudAutoSync } from './Account';
 import { loadIssue } from '../app/state';
 
 type Tab = 'home' | 'schedule' | 'tasks' | 'stats' | 'social' | 'settings';
@@ -116,6 +117,7 @@ export function App() {
   }, []);
 
   useCalendarAutoSync(s.onboarded, showToast);
+  useCloudAutoSync();
 
   // 베타 지표: 오늘 연 날을 남긴다(하루 한 번).
   const todayKey = dateKey(nowValue);
@@ -234,6 +236,7 @@ export function App() {
     return (
       <div className="app">
         <ConsentPanel s={s} title="계속 쓰려면 동의가 필요해요" onDone={() => showToast('동의를 남겼어요')} />
+        <ConflictSheet toast={showToast} />
       </div>
     );
   }
@@ -247,7 +250,13 @@ export function App() {
             저장된 기록을 읽지 못해 새로 시작했어요. 이전 데이터는 지우지 않고 보관했어요(시작한 뒤 설정 → 데이터에서 내려받기).
           </div>
         )}
-        <Onboarding />
+        <Onboarding toast={showToast} />
+        <ConflictSheet toast={showToast} />
+        {toast && (
+          <div className="toast" role="status" key={toast.id} style={{ bottom: 24 }}>
+            <span className="grow">{toast.text}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -333,6 +342,8 @@ export function App() {
       )}
 
       {ring && <AlarmOverlay ring={ring.ring} test={ring.test} onDone={() => setRing(null)} />}
+
+      <ConflictSheet toast={showToast} />
     </div>
   );
 }

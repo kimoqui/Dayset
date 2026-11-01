@@ -1,0 +1,8 @@
+// CI에서 flutter create 뒤 android/에 복사해 쓴다: 오래된 플러그인(file_picker 등)도 최신 compileSdk로 빌드한다.
+subprojects { p ->
+    p.afterEvaluate {
+        if (p.hasProperty('android') && p.name != 'app') {
+            p.android.compileSdkVersion 36
+        }
+    }
+}
