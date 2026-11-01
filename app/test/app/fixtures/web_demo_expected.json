@@ -1,0 +1,282 @@
+{
+ "now": "2026-10-21T05:00:00.000Z",
+ "streak": {
+  "current": 1,
+  "best": 4,
+  "weekSetDays": 1,
+  "monthSetDays": 11,
+  "todayDone": false,
+  "week": [
+   "miss",
+   "set",
+   "today",
+   "future",
+   "future",
+   "future",
+   "future"
+  ]
+ },
+ "lastWeek": {
+  "setDays": 5,
+  "rates": {
+   "sleep": {
+    "achieved": 5,
+    "counted": 7,
+    "estimated": 0
+   },
+   "meal": {
+    "achieved": 17,
+    "counted": 21,
+    "estimated": 0
+   },
+   "exercise": {
+    "achieved": 4,
+    "counted": 7,
+    "estimated": 0
+   }
+  }
+ },
+ "days": {
+  "2026-10-01": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-02": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": true,
+   "achieved": 3,
+   "total": 5
+  },
+  "2026-10-03": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": true,
+   "achieved": 2,
+   "total": 4
+  },
+  "2026-10-04": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-05": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-06": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-07": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-08": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-09": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": false,
+   "achieved": 2,
+   "total": 5
+  },
+  "2026-10-10": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": false,
+   "achieved": 1,
+   "total": 4
+  },
+  "2026-10-11": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": false,
+   "achieved": 3,
+   "total": 5
+  },
+  "2026-10-12": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": true,
+   "achieved": 1,
+   "total": 5
+  },
+  "2026-10-13": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-14": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": false,
+   "achieved": 3,
+   "total": 5
+  },
+  "2026-10-15": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-16": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-17": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-18": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 4,
+   "total": 5
+  },
+  "2026-10-19": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": false,
+   "achieved": 1,
+   "total": 4
+  },
+  "2026-10-20": {
+   "hasData": true,
+   "isSetDay": true,
+   "wakeOk": true,
+   "achieved": 5,
+   "total": 5
+  },
+  "2026-10-21": {
+   "hasData": true,
+   "isSetDay": false,
+   "wakeOk": true,
+   "achieved": 2,
+   "total": 5
+  }
+ },
+ "tomorrow": {
+  "wake": "2026-10-21T22:00:00.000Z",
+  "bed": "2026-10-21T14:45:00.000Z",
+  "blocks": [
+   "habit|수면|2026-10-21T14:45:00.000Z|2026-10-21T22:00:00.000Z",
+   "habit|아침 식사|2026-10-21T22:30:00.000Z|2026-10-21T23:00:00.000Z",
+   "task|영어 숙제|2026-10-21T23:00:00.000Z|2026-10-21T23:20:00.000Z",
+   "fixed|이동|2026-10-21T23:20:00.000Z|2026-10-22T00:00:00.000Z",
+   "fixed|팀 회의|2026-10-22T00:00:00.000Z|2026-10-22T01:00:00.000Z",
+   "habit|점심 식사|2026-10-22T03:00:00.000Z|2026-10-22T04:00:00.000Z",
+   "fixed|경영학원론|2026-10-22T04:00:00.000Z|2026-10-22T05:30:00.000Z",
+   "habit|저녁 식사|2026-10-22T09:30:00.000Z|2026-10-22T10:30:00.000Z",
+   "habit|운동|2026-10-22T11:30:00.000Z|2026-10-22T12:00:00.000Z"
+  ]
+ },
+ "check": {
+  "kind": "ok",
+  "block": "치과 예약 전화",
+  "expected": "work"
+ },
+ "metrics": {
+  "anonId": "b-0oiiec1",
+  "retention": {
+   "activeDays": 21,
+   "d1": true,
+   "d7": true,
+   "d14": true
+  },
+  "habit": {
+   "weeks": [
+    {
+     "week": "2026-09-28",
+     "setDays": 1
+    },
+    {
+     "week": "2026-10-05",
+     "setDays": 4
+    },
+    {
+     "week": "2026-10-12",
+     "setDays": 5
+    },
+    {
+     "week": "2026-10-19",
+     "setDays": 1
+    }
+   ],
+   "weeksWith3SetDays": 2,
+   "currentStreak": 1,
+   "bestStreak": 4
+  },
+  "usage": {
+   "nowButtonTaps": 60,
+   "checkPopupRecords": 0,
+   "notificationRecords": 0,
+   "tasksAdded": 0,
+   "tasksDone": 0,
+   "reorders": 4,
+   "calendarsConnected": 1,
+   "shares": 0,
+   "friends": 3,
+   "nearbyPeople": 0,
+   "eveningChecks": 20
+  },
+  "calibration": {
+   "samples": 8,
+   "ratios": {
+    "homework": 1.3,
+    "personal": 0.7
+   }
+  },
+  "activation": {
+   "observationStarted": false,
+   "reviewed": false,
+   "activated": true,
+   "activatedDay": 0
+  }
+ },
+ "planned": {
+  "task-report": 180,
+  "task-english": 80,
+  "task-dentist": 5
+ },
+ "suggestion": {
+  "order": [
+   "task-dentist",
+   "task-english",
+   "task-report"
+  ],
+  "reasons": [
+   "개인 일을 먼저 두는 편이에요",
+   "짧은 일을 먼저 끝내는 편이에요"
+  ]
+ }
+}

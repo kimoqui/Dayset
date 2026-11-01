@@ -1,0 +1,50 @@
+# DaySet 앱(Flutter) — Claude Code 작업 안내
+
+"자동으로 짜주는 일정으로 편하게 생활습관 잡기". 알람·'지금' 버튼으로 생활을 자동 기록하고,
+매일 밤 다음 날 일정과 알람을 자동으로 만드는 앱이다. 웹 버전(dayset-web)을 앱으로 옮긴 것이다.
+
+## 구조
+```
+lib/core/model     도메인 모델 (Flutter 의존 없음, JSON은 웹과 같은 형식)
+lib/core/engine    일정 생성·'지금' 버튼·달성 판정·셋 데이·단계적 교정·코칭 규칙 (Flutter 의존 없음)
+lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app과 1:1
+  state.dart       AppState(웹 백업 JSON과 같은 구조), 저장·불러오기, 깨진 데이터 보관
+  store.dart       Store: 화면이 부르는 동작 전부(웹 store.ts와 같은 이름)
+  derive.dart      화면용 계산(일정, 하루 평가, 기간 통계, 관찰, 바뀜 미리보기)
+  streak / social / nearby / duration / priority_model / now_check / metrics / nlp / ics / seed
+lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
+lib/ui             화면 — 웹 src/ui와 1:1
+  theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)
+  kit.dart         공통 부품(아이콘·카드·버튼·세그먼트·스위치·아래 창·입력)
+  scope.dart       context.store / context.app / context.ui, 알림 띠, 화면 이동
+  app.dart         셸: 탭 6개(밀어서 이동), 일정 체크 띠, 알람 화면, 관찰 안내, 기념일
+  screens/         홈·일정·할 일·기록·소셜·설정 + 저녁 확인·내 하루 보기·시연·처음 설정
+assets/fonts       Pretendard(SIL OFL 1.1, 한글 2,350자 묶음)
+native/            flutter create 뒤 ios·android 폴더에 넣을 위젯 네이티브 코드
+test/engine        엔진 테스트
+test/app           앱 로직 테스트(웹 테스트를 옮긴 것) + 웹 호환 테스트(fixtures/)
+```
+
+## 원칙
+- 엔진(lib/core)·앱 로직(lib/app)은 Flutter를 import하지 않는다. 규칙을 바꾸면 테스트부터 고친다.
+- 엔진·앱 로직 규칙은 웹 버전과 같게 유지한다. 한쪽을 바꾸면 다른 쪽도 맞춘다.
+  `test/app/web_compat_test.dart`가 웹 예시 데이터로 결과가 같은지 확인한다(웹에서 fixtures를 다시 만들 수 있다).
+- 화면은 `context.store`의 메서드만 부른다. 상태를 직접 바꾸지 않는다. 시각은 `context.ui.now`만 쓴다.
+- 할 일·캘린더가 바뀌면 Store가 오늘 남은 일정과 확정한 내일 일정을 바로 다시 짠다(진행 중인 조각 유지, 15초 되돌리기).
+- 알람·기록·일정 계산은 네트워크 없이 기기 안에서 끝난다. 서버는 동기화와 AI 호출만(4단계).
+- 잠금·캘린더·수면 블록은 엔진이 움직이지 않는다. AI는 해석만 하고 변경은 확인 카드를 거친다.
+- 문구는 '사실 + 다음 행동'. 진단·치료·처방 같은 의료 표현 금지.
+- 색·글자 크기는 lib/ui/theme.dart 토큰만 쓴다. 하드코딩 금지.
+- 저장은 기기 파일(앱 전용 폴더). 깨진 데이터는 지우지 않고 보관한다. 백업은 웹과 같은 JSON.
+
+## 명령
+- 테스트: `flutter test` (웹 호환 테스트는 한국 시간대에서만 돈다: `TZ=Asia/Seoul flutter test`)
+- 정적 분석: `flutter analyze`
+- 실행: `flutter run`
+
+## 단계
+1. (지금) 웹 기능을 앱으로 옮기기 — 엔진·로직·화면, 웹 백업 불러오기
+2. 알림: flutter_local_notifications로 잠금화면 '지금 일정' 알림(안드로이드 고정 알림, iOS 라이브 액티비티), 기록 버튼 → `lib/platform/notify.dart`의 notifyPort를 실제 구현으로
+3. 알람: iOS AlarmKit(iOS 26)·안드로이드 AlarmManager로 앱이 꺼져 있어도 울리기, 끄기 = 기상 기록
+4. 서버: Supabase(익명 로그인 → 계정 연결), 친구·근처 순위 실시간, 백업 동기화
+5. 베타: TestFlight·Play 내부 테스트

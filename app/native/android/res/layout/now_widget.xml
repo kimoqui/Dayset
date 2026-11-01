@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/now_widget_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/now_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지금 무엇을 하나요?"
+        android:textColor="#1B1F1D"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <Button android:id="@+id/btn_sleep" style="@style/NowButton" android:text="수면" />
+        <Button android:id="@+id/btn_meal" style="@style/NowButton" android:text="식사" />
+        <Button android:id="@+id/btn_work" style="@style/NowButton" android:text="업무" />
+        <Button android:id="@+id/btn_exercise" style="@style/NowButton" android:text="운동" />
+        <Button android:id="@+id/btn_rest" style="@style/NowButton" android:text="휴식" />
+    </LinearLayout>
+</LinearLayout>
