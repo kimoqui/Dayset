@@ -160,7 +160,7 @@ export function Schedule({ s, now, toast, openDemo }: { s: AppState; now: Date; 
           return (
             <div key={r.key}>
               <div className={`line-row ${isNow ? 'now' : ''}`}>
-                <span className="time" style={isNow ? { color: 'var(--accent)' } : undefined}>
+                <span className="time" style={isNow ? { color: 'var(--accent-strong)' } : undefined}>
                   {formatHm(r.time)}
                 </span>
                 <span className="bar" style={{ background: r.color }} />

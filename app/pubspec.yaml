@@ -39,3 +39,14 @@ flutter:
           weight: 600
         - asset: assets/fonts/Pretendard-Bold.ttf
           weight: 700
+    # 파스텔 다이어리 테마: 보통 글자는 고운돋움, 굵은 글자(제목·단추)는 주아(둘 다 SIL OFL 1.1, 한글 2,350자 묶음)
+    - family: DaySetPastel
+      fonts:
+        - asset: assets/fonts/GowunDodum-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GowunDodum-Regular.ttf
+          weight: 500
+        - asset: assets/fonts/Jua-Regular.ttf
+          weight: 600
+        - asset: assets/fonts/Jua-Regular.ttf
+          weight: 700

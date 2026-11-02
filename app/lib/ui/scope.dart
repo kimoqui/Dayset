@@ -54,10 +54,11 @@ enum AppPage {
   static const tabs = [home, schedule, tasks, stats, social, settings];
 }
 
-/// 테마: 나이트(기본), 밝게, 기기 설정 따르기.
+/// 테마: 나이트(기본), 밝게, 파스텔 다이어리, 기기 설정 따르기.
 enum ThemePref {
   dark('나이트'),
   light('밝게'),
+  pastel('파스텔'),
   system('기기 설정');
 
   const ThemePref(this.label);

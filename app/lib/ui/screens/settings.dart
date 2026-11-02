@@ -285,8 +285,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           label: '테마',
           value: ui.theme,
           onChanged: ui.actions.setTheme,
-          options: const [SegOption(ThemePref.dark, '나이트'), SegOption(ThemePref.light, '밝게'), SegOption(ThemePref.system, '기기 설정')],
+          options: const [SegOption(ThemePref.dark, '나이트'), SegOption(ThemePref.light, '밝게'), SegOption(ThemePref.pastel, '파스텔'), SegOption(ThemePref.system, '기기')],
         ),
+        if (ui.theme == ThemePref.pastel) const LabelText('파스텔 다이어리: 크림 바탕에 둥근 글씨, 스티커처럼 테두리를 둘렀어요'),
       ]),
 
       // 데이터

@@ -3,6 +3,9 @@
 @font-face { font-family: 'Pretendard'; font-weight: 500; font-style: normal; font-display: swap; src: url('./fonts/Pretendard-Medium.subset.woff2') format('woff2'); }
 @font-face { font-family: 'Pretendard'; font-weight: 600; font-style: normal; font-display: swap; src: url('./fonts/Pretendard-SemiBold.subset.woff2') format('woff2'); }
 @font-face { font-family: 'Pretendard'; font-weight: 700; font-style: normal; font-display: swap; src: url('./fonts/Pretendard-Bold.subset.woff2') format('woff2'); }
+/* 파스텔 다이어리 테마 글꼴: 보통 글자는 고운돋움, 굵은 글자(제목·단추)는 주아(둘 다 SIL OFL 1.1, 한글 2,350자 묶음). 앱 DaySetPastel과 같다. */
+@font-face { font-family: 'DaySetPastel'; font-weight: 100 500; font-style: normal; font-display: swap; src: url('./fonts/GowunDodum-Regular.subset.woff2') format('woff2'); }
+@font-face { font-family: 'DaySetPastel'; font-weight: 600 900; font-style: normal; font-display: swap; src: url('./fonts/Jua-Regular.subset.woff2') format('woff2'); }
 
 /* 디자인 B '나이트 링' 토큰. 색·글자 크기는 여기 변수만 쓴다.
    기본은 나이트(어두운 남색). 설정에서 '밝게'를 고르면 같은 색 체계의 밝은 버전을 쓴다. */
@@ -49,6 +52,15 @@
     --exercise: #9a8f7a; --rest: #8e7bd6; --alarm: #5c6bc0; --task: #2e8c7d; --calendar: #7e88a0; --future: #eceff4; --track: #e6e9f0;
     --dot: #9aa4bb; --nav: #ffffff; --shadow: 0 1px 2px rgba(20, 26, 42, 0.05); --page: #e3e6ed; --ring-bg: #f3f4f8; color-scheme: light;
   }
+}
+/* 파스텔 다이어리: 크림 바탕, 갈색 외곽선과 밀린 그림자(스티커 느낌). 앱 DsColors.pastel과 같은 값. */
+:root[data-theme='pastel'] {
+  --bg: #fff7ec; --surface: #fffdf8; --surface-2: #fff1dc; --ink: #3b2f2a; --ink-soft: #4d3f38; --muted: #76665c; --faint: #8e7e72;
+  --line: #f0dfc8; --line-strong: #e4cfb2; --line-btn: #3b2f2a; --accent: #ffb36b; --accent-strong: #b4621a; --accent-ink: #3b2f2a;
+  --tint: #ffe3c2; --tint-line: #3b2f2a; --pill-bg: #ffe3c2; --miss: #c9503c; --sleep: #9c95ea; --meal: #ffb36b; --work: #6cc4a4;
+  --exercise: #ff9db4; --rest: #8cbcf0; --alarm: #9c95ea; --task: #52b08e; --calendar: #b8a898; --future: #f6ead8; --track: #f3e4cf;
+  --dot: #c8b6a2; --nav: #fffdf8; --shadow: none; --page: #f5e9d6; --ring-bg: #fff7ec; color-scheme: light;
+  --stroke: #3b2f2a;
 }
 :root[data-theme='light'] {
   --bg: #f3f4f8; --surface: #ffffff; --surface-2: #f7f8fb; --ink: #141a2a; --ink-soft: #2a3247; --muted: #5e6782; --faint: #7e88a0;
@@ -758,3 +770,24 @@ a.btn { text-decoration: none; color: inherit; }
 @media (max-width: 380px) { .app-connect-body { flex-direction: column; align-items: flex-start; } }
 @media (min-width: 1024px) { .app.wide .app-steps { font-size: 16px; line-height: 25px; } }
 .get-app .nav-logo { font-size: 22px; line-height: 30px; font-weight: 700; letter-spacing: -0.4px; color: var(--accent-strong); }
+
+/* 파스텔 다이어리 테마: 외곽선·밀린 그림자·둥근 글꼴 */
+:root[data-theme='pastel'] body { font-family: 'DaySetPastel', 'Pretendard', system-ui, sans-serif; letter-spacing: 0; font-feature-settings: normal; }
+:root[data-theme='pastel'] .card { border: 2px solid var(--stroke); border-radius: 22px; box-shadow: 3px 4px 0 var(--stroke); }
+:root[data-theme='pastel'] .card.tint { border-color: var(--stroke); box-shadow: 3px 4px 0 var(--stroke); }
+:root[data-theme='pastel'] .btn { border-width: 2px; }
+:root[data-theme='pastel'] .btn.primary { border-color: var(--stroke); box-shadow: 2px 3px 0 var(--stroke); }
+:root[data-theme='pastel'] .btn.primary:active { transform: translate(2px, 3px); box-shadow: none; }
+:root[data-theme='pastel'] .btn.ghost { border-width: 1px; }
+:root[data-theme='pastel'] .seg { background: var(--surface-2); border: 2px solid var(--stroke); }
+:root[data-theme='pastel'] .seg button[aria-checked='true'] { background: var(--accent); color: var(--accent-ink); }
+:root[data-theme='pastel'] .chip { border: 2px solid var(--stroke); }
+:root[data-theme='pastel'] .chip[aria-checked='true'] { background: var(--accent); border-color: var(--stroke); }
+:root[data-theme='pastel'] .input { border: 2px solid var(--line-strong); }
+:root[data-theme='pastel'] .tabbar { border-top: 2px solid var(--stroke); }
+:root[data-theme='pastel'] .app.wide .tabbar { border-top: none; border-right: 2px solid var(--stroke); }
+:root[data-theme='pastel'] .now-dock { border: 2px solid var(--stroke); box-shadow: 3px 4px 0 var(--stroke); }
+:root[data-theme='pastel'] .now-dock.open { border-color: var(--stroke); }
+:root[data-theme='pastel'] .round-btn .c { border-width: 2px; border-color: var(--stroke); }
+:root[data-theme='pastel'] .desk-now,
+:root[data-theme='pastel'] .desk-next { border: 2px solid var(--stroke); box-shadow: 3px 4px 0 var(--stroke); }

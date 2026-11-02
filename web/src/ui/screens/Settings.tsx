@@ -13,7 +13,7 @@ import { AppConnectCard } from '../GetApp';
 import { enableNotifications } from '../notify';
 import { Icon, NumberField, Segmented, Switch, TimeField, TopBar } from '../kit';
 
-export type Theme = 'system' | 'light' | 'dark';
+export type Theme = 'system' | 'light' | 'dark' | 'pastel';
 
 export function Settings({
   s,
@@ -308,9 +308,11 @@ export function Settings({
           options={[
             { value: 'dark', label: '나이트' },
             { value: 'light', label: '밝게' },
-            { value: 'system', label: '기기 설정' },
+            { value: 'pastel', label: '파스텔' },
+            { value: 'system', label: '기기' },
           ]}
         />
+        {theme === 'pastel' && <p className="t-label muted">파스텔 다이어리: 크림 바탕에 둥근 글씨, 스티커처럼 테두리를 둘렀어요</p>}
       </section>
 
       <section className="card stack" aria-label="데이터">

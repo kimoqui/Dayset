@@ -10,7 +10,7 @@
   할 일·캘린더가 바뀌면 `store.changeAndReplan`이 오늘 남은 일정과 확정한 내일 일정을 바로 다시 짠다(진행 중인 할 일 조각은 유지, 15초 되돌리기).
   설정·목표가 바뀌면 `inputsVersion`만 올리고 화면에 '다시 짜기'를 보여준다.
 - 문구는 '사실 + 다음 행동'. 진단·치료·처방 같은 의료 표현 금지.
-- 디자인은 시안 B '나이트 링'. 색·글자 크기는 `src/ui/styles.css`의 변수만 쓴다(기본 나이트, 설정에서 밝게).
+- 디자인은 시안 B '나이트 링'. 색·글자 크기는 `src/ui/styles.css`의 변수만 쓴다(기본 나이트, 설정에서 밝게·파스텔). 파스텔 다이어리는 `data-theme='pastel'` 변수 + 맨 아래 외곽선 규칙, 글꼴 DaySetPastel(보통=고운돋움, 굵게=주아, `src/ui/fonts`). 앱 DsColors.pastel과 같은 값.
 
 ## 명령
 - `npm run dev` / `npm test` / `npm run typecheck`

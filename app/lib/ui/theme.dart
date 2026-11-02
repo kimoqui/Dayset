@@ -1,5 +1,6 @@
 // 디자인 B '나이트 링' 토큰. 웹 버전 src/ui/styles.css의 변수와 같은 값이다.
-// 색·글자 크기는 여기 토큰만 쓴다(화면에서 색을 직접 적지 않는다). 기본은 나이트, 설정에서 밝게.
+// 색·글자 크기는 여기 토큰만 쓴다(화면에서 색을 직접 적지 않는다). 기본은 나이트, 설정에서 밝게·파스텔.
+// 파스텔 다이어리: 크림 바탕, 갈색 외곽선과 밀린 그림자(스티커 느낌), 둥근 글꼴(DaySetPastel = 고운돋움 + 굵게는 주아).
 
 import 'package:flutter/material.dart';
 
@@ -39,12 +40,29 @@ class DsColors extends ThemeExtension<DsColors> {
     required this.nav,
     required this.ringBg,
     required this.dark,
+    this.font = 'Pretendard',
+    this.stroke = const Color(0x00000000),
+    this.strokeW = 0,
+    this.pop = Offset.zero,
   });
 
   final Color bg, surface, surface2, ink, inkSoft, muted, faint, line, lineStrong, lineBtn;
   final Color accent, accentStrong, accentInk, tint, tintLine, pillBg, miss;
   final Color sleep, meal, work, exercise, rest, alarm, task, calendar, future, track, dot, nav, ringBg;
   final bool dark;
+
+  /// 글꼴 이름(pubspec의 family).
+  final String font;
+
+  /// 카드·주요 단추 외곽선(strokeW가 0이면 쓰지 않는다)과 그 아래 밀린 그림자.
+  final Color stroke;
+  final double strokeW;
+  final Offset pop;
+
+  bool get outlined => strokeW > 0;
+
+  /// 외곽선 테마의 밀린 그림자(없으면 null).
+  List<BoxShadow>? get popShadow => outlined && pop != Offset.zero ? [BoxShadow(color: stroke, offset: pop)] : null;
 
   static const night = DsColors(
     bg: Color(0xFF0D1220),
@@ -114,6 +132,44 @@ class DsColors extends ThemeExtension<DsColors> {
     dark: false,
   );
 
+  static const pastel = DsColors(
+    bg: Color(0xFFFFF7EC),
+    surface: Color(0xFFFFFDF8),
+    surface2: Color(0xFFFFF1DC),
+    ink: Color(0xFF3B2F2A),
+    inkSoft: Color(0xFF4D3F38),
+    muted: Color(0xFF76665C),
+    faint: Color(0xFF8E7E72),
+    line: Color(0xFFF0DFC8),
+    lineStrong: Color(0xFFE4CFB2),
+    lineBtn: Color(0xFF3B2F2A),
+    accent: Color(0xFFFFB36B),
+    accentStrong: Color(0xFFB4621A),
+    accentInk: Color(0xFF3B2F2A),
+    tint: Color(0xFFFFE3C2),
+    tintLine: Color(0xFF3B2F2A),
+    pillBg: Color(0xFFFFE3C2),
+    miss: Color(0xFFC9503C),
+    sleep: Color(0xFF9C95EA),
+    meal: Color(0xFFFFB36B),
+    work: Color(0xFF6CC4A4),
+    exercise: Color(0xFFFF9DB4),
+    rest: Color(0xFF8CBCF0),
+    alarm: Color(0xFF9C95EA),
+    task: Color(0xFF52B08E),
+    calendar: Color(0xFFB8A898),
+    future: Color(0xFFF6EAD8),
+    track: Color(0xFFF3E4CF),
+    dot: Color(0xFFC8B6A2),
+    nav: Color(0xFFFFFDF8),
+    ringBg: Color(0xFFFFF7EC),
+    dark: false,
+    font: 'DaySetPastel',
+    stroke: Color(0xFF3B2F2A),
+    strokeW: 2,
+    pop: Offset(3, 4),
+  );
+
   Color activity(Activity? a) => switch (a) {
         Activity.sleep => sleep,
         Activity.meal => meal,
@@ -162,7 +218,7 @@ class DsGap {
 
 ThemeData buildTheme(DsColors c) {
   final base = c.dark ? ThemeData.dark(useMaterial3: true) : ThemeData.light(useMaterial3: true);
-  final text = base.textTheme.apply(fontFamily: 'Pretendard', bodyColor: c.ink, displayColor: c.ink);
+  final text = base.textTheme.apply(fontFamily: c.font, bodyColor: c.ink, displayColor: c.ink);
   return base.copyWith(
     scaffoldBackgroundColor: c.bg,
     canvasColor: c.bg,

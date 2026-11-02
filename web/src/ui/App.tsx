@@ -50,7 +50,7 @@ function progressText(): string {
 function readTheme(): Theme {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    if (v === 'light' || v === 'dark' || v === 'system') return v;
+    if (v === 'light' || v === 'dark' || v === 'system' || v === 'pastel') return v;
   } catch {
     // 저장소 없음
   }
@@ -98,6 +98,7 @@ export function App() {
 
   /** 지금 화면에 보이는 테마(기기 설정이면 기기 모드를 따른다). */
   const resolvedTheme = (): 'dark' | 'light' => {
+    if (theme === 'pastel') return 'light';
     if (theme !== 'system') return theme;
     try {
       return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';

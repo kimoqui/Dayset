@@ -223,7 +223,7 @@ class _RingPainter extends CustomPainter {
     // 0·6·12·18시
     for (final (label, x, y) in const [('0시', 120.0, 46.0), ('6시', 198.0, 124.0), ('12시', 120.0, 202.0), ('18시', 42.0, 124.0)]) {
       final tp = TextPainter(
-        text: TextSpan(text: label, style: TextStyle(fontFamily: 'Pretendard', fontSize: 11, color: colors.faint)),
+        text: TextSpan(text: label, style: TextStyle(fontFamily: colors.font, fontSize: 11, color: colors.faint)),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height + 2));

@@ -86,9 +86,13 @@ class _DaySetAppState extends State<DaySetApp> {
         supportedLocales: const [Locale('ko', 'KR'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         navigatorKey: _nav,
-        theme: buildTheme(DsColors.light),
+        theme: buildTheme(_theme == ThemePref.pastel ? DsColors.pastel : DsColors.light),
         darkTheme: buildTheme(DsColors.night),
-        themeMode: switch (_theme) { ThemePref.dark => ThemeMode.dark, ThemePref.light => ThemeMode.light, ThemePref.system => ThemeMode.system },
+        themeMode: switch (_theme) {
+          ThemePref.dark => ThemeMode.dark,
+          ThemePref.light || ThemePref.pastel => ThemeMode.light,
+          ThemePref.system => ThemeMode.system,
+        },
         builder: (context, child) => _Shell(nav: _nav, theme: _theme, setTheme: _setTheme, bridge: widget.bridge, device: widget.device, child: child!),
         home: const _Root(),
       ),
@@ -366,7 +370,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
 
   bool get _dark => switch (widget.theme) {
         ThemePref.dark => true,
-        ThemePref.light => false,
+        ThemePref.light || ThemePref.pastel => false,
         ThemePref.system => MediaQuery.platformBrightnessOf(context) == Brightness.dark,
       };
 
@@ -525,13 +529,13 @@ class _ToastView extends StatelessWidget {
               boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 8))],
             ),
             child: Row(children: [
-              Expanded(child: Text(text, style: TextStyle(fontFamily: 'Pretendard', fontSize: 14, height: 20 / 14, color: c.ink))),
+              Expanded(child: Text(text, style: TextStyle(fontFamily: c.font, fontSize: 14, height: 20 / 14, color: c.ink))),
               if (undo != null)
                 GestureDetector(
                   onTap: undo,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    child: Text('되돌리기', style: TextStyle(fontFamily: 'Pretendard', fontSize: 14, fontWeight: FontWeight.w700, color: c.accentStrong)),
+                    child: Text('되돌리기', style: TextStyle(fontFamily: c.font, fontSize: 14, fontWeight: FontWeight.w700, color: c.accentStrong)),
                   ),
                 ),
             ]),
@@ -651,7 +655,7 @@ class _TabsState extends State<_Tabs> {
         ]),
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(color: c.nav, border: Border(top: BorderSide(color: c.line))),
+        decoration: BoxDecoration(color: c.nav, border: Border(top: c.outlined ? BorderSide(color: c.stroke, width: c.strokeW) : BorderSide(color: c.line))),
         padding: EdgeInsets.fromLTRB(4, 6, 4, 8 + MediaQuery.paddingOf(context).bottom),
         child: Row(children: [
           for (var i = 0; i < AppPage.tabs.length; i++)

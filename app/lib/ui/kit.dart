@@ -208,9 +208,9 @@ class DsCard extends StatelessWidget {
       padding: padding ?? (list ? const EdgeInsets.symmetric(horizontal: 16, vertical: 4) : DsGap.cardPad),
       decoration: BoxDecoration(
         color: tint ? c.tint : c.surface,
-        border: Border.all(color: tint ? c.tintLine : c.line),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: c.dark || tint ? null : const [BoxShadow(color: Color(0x0D141A2A), blurRadius: 2, offset: Offset(0, 1))],
+        border: c.outlined ? Border.all(color: c.stroke, width: c.strokeW) : Border.all(color: tint ? c.tintLine : c.line),
+        borderRadius: BorderRadius.circular(c.outlined ? 22 : 20),
+        boxShadow: c.popShadow ?? (c.dark || tint ? null : const [BoxShadow(color: Color(0x0D141A2A), blurRadius: 2, offset: Offset(0, 1))]),
       ),
       child: Column(crossAxisAlignment: crossAxisAlignment, mainAxisSize: MainAxisSize.min, children: _spaced(children, list ? 0 : gap)),
     );
@@ -265,7 +265,7 @@ class DsButton extends StatelessWidget {
     final c = context.ds;
     final h = small ? 36.0 : 44.0;
     final (Color bg, Color border, Color fg, FontWeight w) = switch (kind) {
-      BtnKind.primary => (c.accent, c.accent, c.accentInk, FontWeight.w700),
+      BtnKind.primary => (c.accent, c.outlined ? c.stroke : c.accent, c.accentInk, FontWeight.w700),
       BtnKind.ghost => (Colors.transparent, Colors.transparent, c.accentStrong, FontWeight.w700),
       BtnKind.danger => (Colors.transparent, onTint ? c.tintLine : c.lineBtn, c.miss, FontWeight.w500),
       BtnKind.normal => (Colors.transparent, onTint ? c.tintLine : c.lineBtn, c.ink, FontWeight.w500),
@@ -276,7 +276,13 @@ class DsButton extends StatelessWidget {
       child: Container(
         height: h,
         padding: EdgeInsets.symmetric(horizontal: kind == BtnKind.ghost ? 8 : (small ? 14 : 20)),
-        decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(square ? 14 : h / 2)),
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border.all(color: border, width: c.outlined && kind != BtnKind.ghost ? c.strokeW : 1),
+          borderRadius: BorderRadius.circular(square ? 14 : h / 2),
+          // 외곽선 테마: 주요 단추만 스티커처럼 살짝 띄운다.
+          boxShadow: kind == BtnKind.primary && c.outlined ? [BoxShadow(color: c.stroke, offset: const Offset(2, 3))] : null,
+        ),
         child: Row(
           mainAxisSize: block ? MainAxisSize.max : MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -441,7 +447,11 @@ class Segmented<T> extends StatelessWidget {
       child: Container(
         height: 42,
         padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: c.outlined ? c.surface2 : c.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: c.outlined ? Border.all(color: c.stroke, width: c.strokeW) : null,
+        ),
         child: LayoutBuilder(builder: (context, box) {
           final w = (box.maxWidth - 2 * (options.length - 1)) / options.length;
           return Stack(children: [
@@ -452,7 +462,7 @@ class Segmented<T> extends StatelessWidget {
               top: 0,
               bottom: 0,
               width: w,
-              child: DecoratedBox(decoration: BoxDecoration(color: c.lineStrong, borderRadius: BorderRadius.circular(11))),
+              child: DecoratedBox(decoration: BoxDecoration(color: c.outlined ? c.accent : c.lineStrong, borderRadius: BorderRadius.circular(11))),
             ),
             Row(children: [
               for (var i = 0; i < options.length; i++) ...[

@@ -23,13 +23,13 @@ lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고�
   device_sync.dart 알림(flutter_local_notifications)·알람(alarm)을 device_plan 목록대로 맞춘다. 알림 버튼 → 셸이 기록(늦으면 일정 시각부터)
 ci/patch_android.py  CI에서 flutter create 뒤 권한·알림 수신기·위젯(native/android 복사)·desugaring·서명(베타 키 APK / 스토어 키 AAB)을 넣는다
 lib/ui             화면 — 웹 src/ui와 1:1
-  theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)
+  theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게·파스텔 다이어리). 파스텔은 외곽선·밀린 그림자(DsColors.outlined)와 DaySetPastel 글꼴
   kit.dart         공통 부품(아이콘·카드·버튼·세그먼트·스위치·아래 창·입력)
   scope.dart       context.store / context.app / context.ui, 알림 띠, 화면 이동
   app.dart         셸: 탭 6개(밀어서 이동), 일정 체크 띠, 알람 화면, 관찰 안내, 기념일
   chat.dart        말로 일정 바꾸기 창 + 습관·기상 바꾸기 창(바로 바꾸지 않고 미리보기 → '바꾸기')
   screens/         홈·일정·할 일·기록·소셜·설정 + 저녁 확인·내 하루 보기·시연·처음 설정
-assets/fonts       Pretendard(SIL OFL 1.1, 한글 2,350자 묶음)
+assets/fonts       Pretendard, 파스텔 테마용 고운돋움·주아(DaySetPastel: 보통=고운돋움, 굵게=주아). 모두 SIL OFL 1.1, 한글 2,350자 묶음
 native/            flutter create 뒤 ios·android 폴더에 넣을 위젯 네이티브 코드
 test/engine        엔진 테스트
 test/app           앱 로직 테스트(웹 테스트를 옮긴 것) + 웹 호환 테스트(fixtures/)
