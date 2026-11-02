@@ -5,8 +5,10 @@ import 'app/cloud_config.dart';
 import 'app/cloud_sync.dart';
 import 'app/state.dart';
 import 'app/store.dart';
+import 'platform/device_sync.dart';
 import 'platform/file_store.dart';
 import 'platform/http_send.dart';
+import 'platform/notify.dart';
 import 'platform/widget_bridge.dart';
 import 'ui/app.dart';
 
@@ -31,5 +33,9 @@ Future<void> main() async {
   }
   // 계정 동기화(서버 주소가 없으면 '서버 준비 중'으로 보인다).
   final cloud = CloudSync(store: store, client: CloudClient(const CloudConfig(url: cloudUrl, key: cloudKey), ioSend));
-  runApp(DaySetApp(store: store, bridge: bridge, cloud: cloud));
+  // 휴대폰 알림·알람(앱이 꺼져 있어도 일정 시작 알림과 기상·취침 알람이 울린다).
+  final device = DeviceSync(store);
+  await device.init();
+  notifyPort = device;
+  runApp(DaySetApp(store: store, bridge: bridge, cloud: cloud, device: device));
 }

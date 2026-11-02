@@ -520,7 +520,7 @@ class _PasteBoxState extends State<_PasteBox> {
       ]);
 }
 
-/// 알람과 알림. 1단계 빌드에는 기기 알림이 없어(notifyPort.available = false) 설정만 저장한다.
+/// 알람과 알림. 휴대폰 알림을 쓸 수 없는 빌드(notifyPort.available = false)에서는 설정만 저장한다.
 class _NotifyCard extends StatefulWidget {
   const _NotifyCard({required this.s});
   final AppState s;
@@ -542,7 +542,7 @@ class _NotifyCardState extends State<_NotifyCard> {
     return DsCard(gap: 14, children: [
       Text('알람과 알림', style: DsText.h2.copyWith(color: c.ink)),
       LabelText(available
-          ? "지금 일정을 알림에 띄워 두고, 일정이 시작됐는데 기록이 없으면 알려요. 알림의 '기록하기'로 바로 기록돼요."
+          ? "지금 일정을 알림에 띄워 두고, 일정이 시작됐는데 기록이 없으면 앱이 꺼져 있어도 알려요. 알림의 '기록하기'로 바로 기록돼요. 기상·취침 알람은 휴대폰 알람처럼 울려요."
           : '잠금화면 알림은 다음 업데이트에서 켜져요. 지금은 앱이 열려 있을 때 화면 안 일정 체크 띠와 알림 띠로 알려 드려요. 아래 설정은 저장해 두었다가 알림이 켜지면 그대로 써요.'),
       if (available && on) ...[
         _switches(s),

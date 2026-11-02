@@ -36,14 +36,12 @@ jobs:
         run: |
           flutter create --org com.dayset --project-name dayset --platforms android .
           rm -f test/widget_test.dart
-          # 앱 이름, 인터넷 권한(계정 동기화)
-          sed -i 's/android:label="dayset"/android:label="DaySet"/' android/app/src/main/AndroidManifest.xml
-          grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml || \
-            sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
           # 오래된 플러그인도 최신 compileSdk로 빌드
           cp ci/compile-sdk.gradle android/compile-sdk.gradle
           if [ -f android/build.gradle.kts ]; then sed -i '1i apply(from = "compile-sdk.gradle")' android/build.gradle.kts; else sed -i "1i apply from: 'compile-sdk.gradle'" android/build.gradle; fi
-          # 늘 같은 베타 키로 서명(업데이트할 때 기록이 지워지지 않게)
+          # 앱 이름·권한(알림·알람·인터넷)·알림 수신기·desugaring·서명 설정
+          python3 ci/patch_android.py android
+          # APK는 늘 같은 베타 키로 서명(업데이트할 때 기록이 지워지지 않게)
           mkdir -p ~/.android && cp android-signing/dayset-beta.keystore ~/.android/debug.keystore
 
       - run: flutter pub get
@@ -52,10 +50,24 @@ jobs:
         run: flutter test
         continue-on-error: true
 
-      - name: APK 빌드
+      - name: APK 빌드(직접 설치용, 베타 키)
         run: |
           flutter build apk --release --build-number ${{ github.run_number }}
           cp build/app/outputs/flutter-apk/app-release.apk ../DaySet.apk
+
+      # 스토어용 AAB: 저장소 Secrets에 DAYSET_UPLOAD_KEYSTORE_B64 등이 있을 때만 만든다(docs/play-store.md).
+      - name: AAB 빌드(구글 플레이용, 스토어 키)
+        env:
+          KEY_B64: ${{ secrets.DAYSET_UPLOAD_KEYSTORE_B64 }}
+          DAYSET_KEYSTORE_PASSWORD: ${{ secrets.DAYSET_KEYSTORE_PASSWORD }}
+          DAYSET_KEY_ALIAS: ${{ secrets.DAYSET_KEY_ALIAS }}
+          DAYSET_KEY_PASSWORD: ${{ secrets.DAYSET_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEY_B64" ]; then echo "스토어 키가 없어 AAB는 건너뜀"; exit 0; fi
+          echo "$KEY_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          DAYSET_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" flutter build appbundle --release --build-number ${{ github.run_number }}
+          cp build/app/outputs/bundle/release/app-release.aab ../DaySet.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
 
       - uses: softprops/action-gh-release@v2
         with:
@@ -64,5 +76,8 @@ jobs:
           body: |
             휴대폰에서 DaySet.apk를 눌러 설치한다(처음 한 번 '출처를 알 수 없는 앱 설치 허용' 필요).
             커밋: ${{ github.sha }}
-          files: DaySet.apk
+          files: |
+            DaySet.apk
+            DaySet.aab
+          fail_on_unmatched_files: false
           make_latest: true

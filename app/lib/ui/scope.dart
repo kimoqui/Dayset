@@ -90,8 +90,8 @@ abstract class ShellActions {
   /// 홈의 '지금' 버튼.
   void tapNow(Activity a);
 
-  /// 일정 체크 팝업·알림 버튼에서 기록.
-  void recordFrom(Activity a, {required String via});
+  /// 일정 체크 팝업·알림 버튼에서 기록. [at]이 있으면 그 시각부터(제때 누르지 못했을 때).
+  void recordFrom(Activity a, {required String via, DateTime? at});
 }
 
 class UiScope extends InheritedWidget {

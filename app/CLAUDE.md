@@ -16,8 +16,11 @@ lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app�
   edits.dart       일정 바꾸기 목록·적용·미리보기(그날만=overrides / 매일=goals), Store.applyEdits로 적용
   chat_command.dart 채팅 글 → 바꾸기 목록(기기 안 규칙)
   log_edit.dart    기록 시각 고치기(웹 logEdit.ts와 같은 규칙), Store.retimeLog·tapAt
+  device_plan.dart 휴대폰에 맡길 알림·알람 목록(지금 일정 문구=웹 noticeFor, 일정 시작 예약 알림, 기상·취침 알람=dueAlarms 규칙)
   ai_chat.dart     로그인하면 서버 AI(supabase/functions/dayset-chat)가 먼저 읽는다: 보낼 요약·받은 답 검사, 실패하면 규칙
 lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
+  device_sync.dart 알림(flutter_local_notifications)·알람(alarm)을 device_plan 목록대로 맞춘다. 알림 버튼 → 셸이 기록(늦으면 일정 시각부터)
+ci/patch_android.py  CI에서 flutter create 뒤 권한·알림 수신기·desugaring·서명(베타 키 APK / 스토어 키 AAB)을 넣는다
 lib/ui             화면 — 웹 src/ui와 1:1
   theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)
   kit.dart         공통 부품(아이콘·카드·버튼·세그먼트·스위치·아래 창·입력)
@@ -50,7 +53,7 @@ test/app           앱 로직 테스트(웹 테스트를 옮긴 것) + 웹 호�
 
 ## 단계
 1. (지금) 웹 기능을 앱으로 옮기기 — 엔진·로직·화면, 웹 백업 불러오기
-2. 알림: flutter_local_notifications로 잠금화면 '지금 일정' 알림(안드로이드 고정 알림, iOS 라이브 액티비티), 기록 버튼 → `lib/platform/notify.dart`의 notifyPort를 실제 구현으로
-3. 알람: iOS AlarmKit(iOS 26)·안드로이드 AlarmManager로 앱이 꺼져 있어도 울리기, 끄기 = 기상 기록
+2. 알림: (안드로이드 됨) 지금 일정 고정 알림·일정 시작 예약 알림·기록 버튼(device_sync). iOS 라이브 액티비티는 남음
+3. 알람: (안드로이드 됨, alarm 패키지) 앱이 꺼져 있어도 울리기, 끄기 = 기상 기록. iOS AlarmKit은 남음
 4. 서버: Supabase(익명 로그인 → 계정 연결), 친구·근처 순위 실시간, 백업 동기화
 5. 베타: TestFlight·Play 내부 테스트

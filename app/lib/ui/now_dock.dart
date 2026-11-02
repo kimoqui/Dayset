@@ -20,7 +20,8 @@ const _labelShort = {
 class NowDock extends StatefulWidget {
   const NowDock({super.key, required this.check, required this.onRecord, required this.onSkip});
   final NowCheck check;
-  final void Function(Activity a) onRecord;
+  /// [at]: 제때 누르지 못했을 때 실제로 시작한(끝난) 시각. 없으면 지금.
+  final void Function(Activity a, {DateTime? at}) onRecord;
   final void Function(String id) onSkip;
 
   @override
@@ -32,6 +33,9 @@ class _NowDockState extends State<NowDock> {
   late String _key = widget.check.key;
   late bool _wasAlert = _alert;
 
+  /// 늦게 눌렀을 때 고른 시각: null = 일정대로, -1 = 지금, 그 밖 = 직접 고른 분(0~1439).
+  int? _when;
+
   bool get _alert => (widget.check.kind == CheckKind.due || widget.check.kind == CheckKind.over) && !widget.check.skipped;
 
   @override
@@ -42,6 +46,7 @@ class _NowDockState extends State<NowDock> {
       _key = widget.check.key;
       _wasAlert = _alert;
       _min = !_alert;
+      _when = null;
     }
   }
 
@@ -123,6 +128,20 @@ class _NowDockState extends State<NowDock> {
     final exp = check.expected!;
     final isOver = check.kind == CheckKind.over;
     final nextAct = next == null ? null : expectedActivity(next);
+    // 일정 시각에서 5분 넘게 지났으면 언제 시작(끝)했는지 고르게 한다. 웹 NowDock과 같은 규칙.
+    final planAt = isOver ? b!.end : b!.start;
+    final nowAt = planAt.add(Duration(minutes: check.minutes));
+    final late = check.minutes >= 5;
+    DateTime? pickAt() {
+      if (!late || _when == -1) return null;
+      final w = _when;
+      if (w == null) return planAt;
+      var d = DateTime(nowAt.year, nowAt.month, nowAt.day, w ~/ 60, w % 60);
+      if (d.isAfter(nowAt)) d = d.subtract(const Duration(days: 1));
+      return d;
+    }
+
+    void record(Activity a) => widget.onRecord(a, at: pickAt());
     final body = Semantics(
       container: true,
       liveRegion: true,
@@ -141,24 +160,40 @@ class _NowDockState extends State<NowDock> {
             ),
           ]),
           const SizedBox(height: 8),
-          Text(isOver ? '${b!.title} 끝났어요?' : '${formatHm(b!.start)} ${b.title} 시간이에요',
+          Text(isOver ? '${b.title} 끝났어요?' : '${formatHm(b.start)} ${b.title} 시간이에요',
               style: TextStyle(fontSize: 17, height: 24 / 17, fontWeight: FontWeight.w700, color: c.ink)),
           const SizedBox(height: 8),
           LabelText(isOver
               ? '${formatHm(b.end)}에 끝나는 일정이었어요 · 지금 기록: $cur'
               : '지금 기록: $cur · ${_labelShort[exp]}${objectParticle(_labelShort[exp]!)} 시작했으면 눌러 주세요'),
+          if (late) ...[
+            const SizedBox(height: 8),
+            Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              LabelText(isOver ? '끝난 시각' : '시작한 시각'),
+              DsChip(label: '일정대로 ${formatHm(planAt)}', selected: _when == null, onTap: () => setState(() => _when = null)),
+              DsChip(label: '지금 ${formatHm(nowAt)}', selected: _when == -1, onTap: () => setState(() => _when = -1)),
+              DsChip(
+                label: (_when ?? -1) >= 0 ? formatClock(_when!) : '다른 시각',
+                selected: (_when ?? -1) >= 0,
+                onTap: () async {
+                  final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: planAt.hour, minute: planAt.minute));
+                  if (t != null && mounted) setState(() => _when = t.hour * 60 + t.minute);
+                },
+              ),
+            ]),
+          ],
           const SizedBox(height: 8),
           Row(children: [
             if (isOver) ...[
-              Expanded(child: DsButton.primary('끝났어요 · 휴식', block: true, onPressed: () => widget.onRecord(Activity.rest))),
+              Expanded(child: DsButton.primary('끝났어요 · 휴식', block: true, onPressed: () => record(Activity.rest))),
               if (nextAct != null && nextAct != exp) ...[
                 const SizedBox(width: 8),
-                Expanded(child: DsButton('${_labelShort[nextAct]} 시작', block: true, onPressed: () => widget.onRecord(nextAct))),
+                Expanded(child: DsButton('${_labelShort[nextAct]} 시작', block: true, onPressed: () => record(nextAct))),
               ],
               const SizedBox(width: 8),
               DsButton('아직이에요', onPressed: () => widget.onSkip('${b.id}:over')),
             ] else ...[
-              Expanded(child: DsButton.primary('${_labelShort[exp]} 시작했어요', block: true, onPressed: () => widget.onRecord(exp))),
+              Expanded(child: DsButton.primary('${_labelShort[exp]} 시작했어요', block: true, onPressed: () => record(exp))),
               const SizedBox(width: 8),
               DsButton('지금은 안 해요', onPressed: () => widget.onSkip(b.id)),
             ],

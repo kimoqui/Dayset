@@ -12,7 +12,9 @@ import '../app/now_check.dart';
 import '../app/state.dart';
 import '../app/store.dart';
 import '../app/streak.dart';
+import '../core/engine/coaching.dart';
 import '../core/model/models.dart';
+import '../platform/device_sync.dart';
 import '../platform/widget_bridge.dart';
 import 'account.dart';
 import 'alarm_overlay.dart';
@@ -37,8 +39,11 @@ import 'theme.dart';
 const _themeKey = 'dayset:theme';
 
 class DaySetApp extends StatefulWidget {
-  const DaySetApp({super.key, required this.store, this.bridge, this.cloud});
+  const DaySetApp({super.key, required this.store, this.bridge, this.cloud, this.device});
   final Store store;
+
+  /// 휴대폰 알림·알람(없으면 앱 안 알림 띠·알람 화면만).
+  final DeviceSync? device;
 
   /// 계정 동기화(없으면 계정 없이 동작).
   final CloudSync? cloud;
@@ -83,7 +88,7 @@ class _DaySetAppState extends State<DaySetApp> {
         theme: buildTheme(DsColors.light),
         darkTheme: buildTheme(DsColors.night),
         themeMode: switch (_theme) { ThemePref.dark => ThemeMode.dark, ThemePref.light => ThemeMode.light, ThemePref.system => ThemeMode.system },
-        builder: (context, child) => _Shell(nav: _nav, theme: _theme, setTheme: _setTheme, bridge: widget.bridge, child: child!),
+        builder: (context, child) => _Shell(nav: _nav, theme: _theme, setTheme: _setTheme, bridge: widget.bridge, device: widget.device, child: child!),
         home: const _Root(),
       ),
     );
@@ -126,8 +131,9 @@ class _Root extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _Shell extends StatefulWidget {
-  const _Shell({required this.nav, required this.theme, required this.setTheme, required this.bridge, required this.child});
+  const _Shell({required this.nav, required this.theme, required this.setTheme, required this.bridge, required this.device, required this.child});
   final GlobalKey<NavigatorState> nav;
+  final DeviceSync? device;
   final ThemePref theme;
   final ValueChanged<ThemePref> setTheme;
   final WidgetBridge? bridge;
@@ -177,7 +183,30 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
       _cloud?.addListener(_onCloud);
       _cloud?.syncNow();
       _cloudTick = Timer.periodic(const Duration(minutes: 2), (_) => _cloud?.syncNow());
+      // 휴대폰 알림 버튼·알람
+      final d = widget.device;
+      if (d != null) {
+        _subs.add(d.actions.listen(_onNotice));
+        _subs.add(d.rang.listen((_) => _refresh()));
+        final launch = d.takeLaunchAction();
+        if (launch != null) _onNotice(launch);
+      }
     });
+  }
+
+  final _subs = <StreamSubscription<Object?>>[];
+
+  /// 알림의 '기록하기'·'지금은 안 해요'. 늦게 눌렀으면 일정 시각부터 기록한다(일정 체크와 같은 규칙).
+  void _onNotice(NoticeAction a) {
+    if (a.action == 'skip' && a.skipId != null) {
+      store.skipCheck(a.skipId!);
+      toast('이번 일정은 넘길게요');
+      return;
+    }
+    if (a.action != 'record' || a.activity == null) return;
+    final start = a.blockStart;
+    final late = start != null && store.now().difference(start).inMinutes >= 5;
+    recordFrom(a.activity!, via: 'notify', at: late ? start : null);
   }
 
   @override
@@ -206,6 +235,9 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
     store.removeListener(_onState);
     _cloud?.removeListener(_onCloud);
     _cloudTick?.cancel();
+    for (final x in _subs) {
+      x.cancel();
+    }
     _tick?.cancel();
     _toastTimer?.cancel();
     super.dispose();
@@ -384,11 +416,19 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
   }
 
   @override
-  void recordFrom(Activity a, {required String via}) {
-    final r = store.tap(a);
+  void recordFrom(Activity a, {required String via, DateTime? at}) {
+    final r = at != null ? store.tapAt(a, at) : store.tap(a);
     haptic(12);
-    store.track(via == 'popup' ? 'check_record' : 'notify_record', a.name);
-    toast(r.changed ? '${a.label} 시작을 기록했어요' : '이미 ${a.label} 기록 중이에요', undo: r.changed ? UndoKind.tap : UndoKind.none);
+    store.track(via == 'popup' ? (at != null ? 'check_record_late' : 'check_record') : 'notify_record', a.name);
+    if (!r.changed) {
+      toast('이미 ${a.label} 기록 중이에요');
+    } else if (r.error != null) {
+      toast('${a.label} 시작을 지금으로 기록했어요. ${r.error}');
+    } else if (at != null) {
+      toast('${a.label}${objectParticle(a.label)} ${formatHm(at)}부터로 기록했어요');
+    } else {
+      toast('${a.label} 시작을 기록했어요', undo: UndoKind.tap);
+    }
   }
 
   void _undo() {
@@ -586,7 +626,7 @@ class _TabsState extends State<_Tabs> {
               bottom: 8,
               child: KeyedSubtree(
                 key: _dockKey,
-                child: NowDock(check: check, onRecord: (a) => ui.actions.recordFrom(a, via: 'popup'), onSkip: context.store.skipCheck),
+                child: NowDock(check: check, onRecord: (a, {at}) => ui.actions.recordFrom(a, via: 'popup', at: at), onSkip: context.store.skipCheck),
               ),
             ),
         ]),
