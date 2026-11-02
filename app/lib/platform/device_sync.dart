@@ -275,7 +275,7 @@ class DeviceSync implements NotifyPort {
             warningNotificationOnKill: false,
             androidFullScreenIntent: true,
             payload: w.key,
-            volumeSettings: const VolumeSettings.fade(fadeDuration: Duration(seconds: 8)),
+            volumeSettings: VolumeSettings.fade(fadeDuration: const Duration(seconds: 8)),
             notificationSettings: NotificationSettings(title: w.title, body: w.body, stopButton: w.kind == RingKind.wake ? '일어났어요' : '확인'),
           ),
         );
