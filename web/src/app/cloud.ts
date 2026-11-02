@@ -89,7 +89,9 @@ export class CloudClient {
   private async call(path: string, init: RequestInit & { token?: string } = {}): Promise<{ status: number; json: unknown }> {
     if (!this.ready) throw new CloudError('config', TEXT.config);
     const headers: Record<string, string> = { apikey: this.cfg.key, 'Content-Type': 'application/json', ...((init.headers as Record<string, string>) ?? {}) };
-    headers.Authorization = `Bearer ${init.token ?? this.cfg.key}`;
+    // 새 공개 키(sb_publishable_…)는 JWT가 아니라 apikey 머리에만 둔다. Authorization에는 로그인 토큰만 넣는다.
+    if (init.token) headers.Authorization = `Bearer ${init.token}`;
+    else if (!this.cfg.key.startsWith('sb_')) headers.Authorization = `Bearer ${this.cfg.key}`;
     let res: Response;
     try {
       res = await this.fetcher(`${this.cfg.url.replace(/\/+$/, '')}${path}`, { ...init, headers });

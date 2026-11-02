@@ -3,10 +3,27 @@
 // 일정을 직접 바꾸지 않는다: 앱이 목록을 미리 보여 주고 사용자가 '바꾸기'를 눌러야 적용한다.
 //
 // 설정: Supabase 대시보드 → Edge Functions → Secrets 에 ANTHROPIC_API_KEY 넣기.
-// 로그인한 사용자만 부를 수 있다(기본 JWT 확인).
+// 로그인한 사용자만 부를 수 있다. 새 공개 키(sb_publishable)는 플랫폼 JWT 확인과 맞지 않아
+// 'Verify JWT'는 끄고(config.toml), 여기서 로그인 토큰을 Auth 서버에 물어 확인한다.
 
 const MODEL = Deno.env.get('DAYSET_AI_MODEL') ?? 'claude-haiku-5-5';
 const KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+
+/** 로그인 토큰이 이 프로젝트의 사용자인지 Auth 서버에 묻는다. */
+async function signedIn(req: Request): Promise<boolean> {
+  const auth = req.headers.get('authorization') ?? '';
+  const apikey = req.headers.get('apikey') ?? '';
+  if (!auth.startsWith('Bearer ') || !SUPABASE_URL || !apikey) return false;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { Authorization: auth, apikey } });
+    if (!r.ok) return false;
+    const u = await r.json();
+    return typeof u?.id === 'string';
+  } catch {
+    return false;
+  }
+}
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -61,6 +78,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
   if (!KEY) return json(503, { error: 'ai_not_configured' });
+  if (!(await signedIn(req))) return json(401, { error: 'sign_in_required' });
   let body: { text?: string; context?: unknown };
   try {
     body = await req.json();

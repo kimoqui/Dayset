@@ -102,5 +102,16 @@ void main() {
       expect(seen!.auth, 'Bearer tok');
       expect(seen!.body, {'text': '내일 운동 빼줘', 'context': {'now': 'x'}});
     });
+
+    test('새 공개 키(sb_publishable)는 apikey 머리에만 둔다', () async {
+      final seen = <Map<String, String>>[];
+      final c = CloudClient(const CloudConfig(url: 'https://x.supabase.co', key: 'sb_publishable_abc'), (method, url, headers, body) async {
+        seen.add(headers);
+        return (status: 200, body: jsonEncode({'access_token': 'a', 'refresh_token': 'r', 'expires_in': 3600, 'user': {'id': 'u', 'email': 'a@b.c'}}));
+      });
+      await c.signIn('a@b.c', 'pw123456');
+      expect(seen.first['apikey'], 'sb_publishable_abc');
+      expect(seen.first.containsKey('Authorization'), isFalse);
+    });
   });
 }

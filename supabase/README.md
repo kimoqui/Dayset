@@ -7,7 +7,8 @@ SQL Editor에서 `dayset_state` 표와 RLS 정책을 만든다(앞서 보낸 SQL
 로그인한 사용자가 '말로 일정 바꾸기'를 쓰면 Claude가 읽는다. 없으면 기기 안 규칙으로 읽는다.
 
 1. Edge Functions → Deploy a new function → 이름 `dayset-chat` → `functions/dayset-chat/index.ts` 내용을 붙여넣고 Deploy.
-   (CLI: `supabase functions deploy dayset-chat`)
+   함수 설정에서 **Verify JWT(Enforce JWT verification)는 끈다** — 함수 안에서 로그인을 직접 확인한다.
+   (CLI: `supabase functions deploy dayset-chat` — config.toml에 verify_jwt = false)
 2. Edge Functions → Secrets → `ANTHROPIC_API_KEY` = console.anthropic.com에서 만든 키.
 3. 선택: `DAYSET_AI_MODEL` (기본 `claude-haiku-5-5`).
 

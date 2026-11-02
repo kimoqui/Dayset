@@ -7,7 +7,6 @@ import { formatHm, koreanDate } from '../engine/models';
 import { Icon, Sheet } from './kit';
 import { haptic } from './motion';
 
-export const APK_URL = 'https://github.com/kimoqui/Dayset/releases/latest/download/DaySet.apk';
 
 export function useCloud() {
   return useSyncExternalStore(subscribeCloud, cloudView);
@@ -199,24 +198,6 @@ export function AccountCard({ toast }: { toast: (t: string) => void }) {
         v.message && <span className="t-label miss">{v.message}</span>
       )}
       {open && <AccountSheet initial={open} onClose={() => setOpen(null)} toast={toast} />}
-    </section>
-  );
-}
-
-/** 웹에서 안드로이드 앱 받기. */
-export function AndroidCard() {
-  return (
-    <section className="card" aria-label="안드로이드 앱">
-      <div className="row between">
-        <div className="col" style={{ gap: 2, minWidth: 0 }}>
-          <span className="t-h2">안드로이드 앱</span>
-          <span className="t-label">같은 계정으로 로그인하면 기록이 이어져요</span>
-        </div>
-        <a className="btn small" href={APK_URL}>
-          받기
-        </a>
-      </div>
-      <span className="t-label">처음 설치할 때 '출처를 알 수 없는 앱 설치'를 허용해야 해요(베타).</span>
     </section>
   );
 }

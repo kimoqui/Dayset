@@ -748,3 +748,13 @@ a.btn { text-decoration: none; color: inherit; }
 .dock-when .chip { height: 32px; padding: 0 12px; font-size: 13px; }
 .dock-when input[type='time'] { height: 32px; border-radius: 16px; border: 1.5px solid var(--line-strong); background: transparent; padding: 0 10px; font-size: 13px; color: var(--ink); }
 .dock-when input[type='time'].on { border-color: var(--accent); background: var(--pill-bg); }
+
+/* 휴대폰 앱 연결(설정 QR 카드, ?get=app 화면) */
+.app-connect-body { display: flex; gap: 16px; align-items: center; }
+.qr { width: 160px; height: 160px; border-radius: 14px; background: #ffffff; padding: 8px; flex-shrink: 0; }
+.get-app .qr { width: 200px; height: 200px; }
+.app-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 21px; }
+.get-app .nav-logo { display: block; }
+@media (max-width: 380px) { .app-connect-body { flex-direction: column; align-items: flex-start; } }
+@media (min-width: 1024px) { .app.wide .app-steps { font-size: 16px; line-height: 25px; } }
+.get-app .nav-logo { font-size: 22px; line-height: 30px; font-weight: 700; letter-spacing: -0.4px; color: var(--accent-strong); }

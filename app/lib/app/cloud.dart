@@ -111,7 +111,9 @@ class CloudClient {
   Future<({int status, Object? json})> _call(String path, {String method = 'GET', Object? body, String? token, Map<String, String> headers = const {}}) async {
     if (!ready) throw CloudError(CloudErrorCode.config);
     final base = cfg.url.replaceAll(RegExp(r'/+$'), '');
-    final h = {'apikey': cfg.key, 'Content-Type': 'application/json', ...headers, 'Authorization': 'Bearer ${token ?? cfg.key}'};
+    // 새 공개 키(sb_publishable_…)는 JWT가 아니라 apikey 머리에만 둔다. Authorization에는 로그인 토큰만 넣는다.
+    final bearer = token ?? (cfg.key.startsWith('sb_') ? null : cfg.key);
+    final h = {'apikey': cfg.key, 'Content-Type': 'application/json', ...headers, if (bearer != null) 'Authorization': 'Bearer $bearer'};
     ({int status, String body}) res;
     try {
       res = await send(method, Uri.parse('$base$path'), h, body == null ? null : jsonEncode(body));

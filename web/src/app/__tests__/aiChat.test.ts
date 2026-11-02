@@ -85,4 +85,15 @@ describe('서버 AI 답 읽기', () => {
     expect(out).toEqual({ reply: 'ok', edits: [] });
     expect(seen).toEqual({ url: 'https://x.supabase.co/functions/v1/dayset-chat', auth: 'Bearer tok', body: { text: '내일 운동 빼줘', context: { now: 'x' } } });
   });
+
+  it('새 공개 키(sb_publishable)는 apikey 머리에만 둔다', async () => {
+    const seen: Record<string, string>[] = [];
+    const c = new CloudClient({ url: 'https://x.supabase.co', key: 'sb_publishable_abc' }, async (_url, init) => {
+      seen.push(init?.headers as Record<string, string>);
+      return new Response(JSON.stringify({ access_token: 'a', refresh_token: 'r', expires_in: 3600, user: { id: 'u', email: 'a@b.c' } }), { status: 200 });
+    });
+    await c.signIn('a@b.c', 'pw123456');
+    expect(seen[0].apikey).toBe('sb_publishable_abc');
+    expect(seen[0].Authorization).toBeUndefined();
+  });
 });

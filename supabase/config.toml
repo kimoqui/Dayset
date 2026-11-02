@@ -1,0 +1,3 @@
+# Supabase CLI 설정(함수 배포용). 새 공개 키(sb_publishable)를 쓰므로 플랫폼 JWT 확인은 끄고 함수 안에서 로그인을 확인한다.
+[functions.dayset-chat]
+verify_jwt = false
