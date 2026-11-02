@@ -55,7 +55,7 @@ jobs:
           flutter build apk --release --build-number ${{ github.run_number }}
           cp build/app/outputs/flutter-apk/app-release.apk ../DaySet.apk
 
-      # 스토어용 AAB: 저장소 Secrets에 DAYSET_UPLOAD_KEYSTORE_B64 등이 있을 때만 만든다(docs/play-store.md).
+      # 스토어용 AAB: 저장소 Secrets에 DAYSET_UPLOAD_KEYSTORE_B64 등이 있을 때만 만든다(store/PLAY_STORE.md).
       - name: AAB 빌드(구글 플레이용, 스토어 키)
         env:
           KEY_B64: ${{ secrets.DAYSET_UPLOAD_KEYSTORE_B64 }}
