@@ -7,7 +7,7 @@ import { ConsentPanel } from './Preview';
 import { clearNowNotification, listenNotifyActions, noticeFor, permission, showNowNotification } from './notify';
 import { currentLog } from '../app/derive';
 import { AlarmOverlay } from './AlarmOverlay';
-import { haptic, useSwipeTabs } from './motion';
+import { DASH3_QUERY, haptic, useMedia, useSwipeTabs, WIDE_QUERY } from './motion';
 import { Celebrate } from './Social';
 import { computeStreak, reachedMilestone } from '../app/streak';
 import { ObsPopup, type ObsPopupKind } from './ObsPopup';
@@ -221,6 +221,8 @@ export function App() {
   }, [streakInfo, celebrate, ring, popup, nowValue, s.asked.celebrated]);
 
   const tab: Tab | null = page === 'evening' || page === 'review' || page === 'demo' ? null : page;
+  const wide = useMedia(WIDE_QUERY);
+  const dash3 = useMedia(DASH3_QUERY);
   const swipe = useSwipeTabs<Tab>({ tabs: TABS.map((t) => t.id), current: tab, onChange: setPage });
   /** 탭이면 방향 모션으로, 그 밖의 화면(저녁 확인·내 하루 보기)은 밀려 들어오는 모션으로 연다. */
   const open = (to: Page) => {
@@ -265,11 +267,27 @@ export function App() {
   const showDock = !!tab && !ring && !popup && !celebrate && check.kind !== 'none';
 
   return (
-    <div className={`app ${showDock ? 'has-dock' : ''}`}>
+    <div className={`app ${showDock ? 'has-dock' : ''} ${wide ? 'wide' : ''}`}>
       <div className="pager" ref={swipe.ref}>
-      <div key={tab ? 'tabs' : page} className={tab ? 'page' : 'page push'}>
-      {page === 'home' && (
+      <div key={tab ? 'tabs' : page} className={`${tab ? 'page' : 'page push'} page-${page}`}>
+      {page === 'home' && !wide && (
         <Home s={s} now={nowValue} onTap={onTap} go={open} theme={resolvedTheme()} toggleTheme={toggleTheme} showGuide={() => setPopup('intro')} streak={streakInfo?.current ?? 0} toast={showToast} />
+      )}
+      {page === 'home' && wide && (
+        // PC: 오늘(링·기록 버튼) | 일정 | 할 일을 한 화면에. 칸마다 따로 스크롤한다.
+        <div className={`dash ${dash3 ? 'three' : ''}`}>
+          <div className="dash-col">
+            <Home s={s} now={nowValue} onTap={onTap} go={open} theme={resolvedTheme()} toggleTheme={toggleTheme} showGuide={() => setPopup('intro')} streak={streakInfo?.current ?? 0} toast={showToast} />
+          </div>
+          <div className="dash-col">
+            <Schedule s={s} now={nowValue} toast={showToast} openDemo={() => open('demo')} />
+          </div>
+          {dash3 && (
+            <div className="dash-col">
+              <Tasks s={s} now={nowValue} toast={showToast} />
+            </div>
+          )}
+        </div>
       )}
       {page === 'schedule' && <Schedule s={s} now={nowValue} toast={showToast} openDemo={() => open('demo')} />}
       {page === 'demo' && <Demo s={s} now={nowValue} onBack={() => setPage('schedule')} />}
@@ -298,6 +316,10 @@ export function App() {
 
       {tab && (
         <nav className="tabbar" aria-label="화면 이동">
+          <div className="nav-brand" aria-hidden="true">
+            <span className="nav-logo">DaySet</span>
+            <span className="t-label">자동으로 짜주는 일정</span>
+          </div>
           {TABS.map((t) => (
             <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => swipe.go(t.id)}>
               <span className="ind">

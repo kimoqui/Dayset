@@ -81,7 +81,7 @@ export function Settings({
   });
 
   return (
-    <div className="screen">
+    <div className="screen two-col">
       <TopBar title="설정" />
 
       {s.demo && (

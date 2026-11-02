@@ -645,3 +645,56 @@ a.btn { text-decoration: none; color: inherit; }
 .chat-card { width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 16px; background: var(--tint); border: 1px solid var(--tint-line); }
 .chat-list { margin: 0; padding-left: 18px; font-size: 14px; line-height: 21px; font-weight: 600; }
 .edit-hint { font-size: 11px; color: var(--accent-strong); font-weight: 700; margin-left: 4px; }
+
+/* ───────── PC 브라우저(1024px 이상): 왼쪽 메뉴 + 넓은 본문 + 홈 대시보드 ─────────
+   폰·태블릿 세로(1023px 이하)는 위의 휴대폰 화면 그대로 둔다. */
+.nav-brand { display: none; }
+@media (min-width: 1024px) {
+  :root { --side-w: 232px; }
+  .app.wide { max-width: none; margin: 0; padding-left: var(--side-w); box-shadow: none; background: var(--page); }
+  .app.wide .pager { width: 100%; }
+
+  /* 왼쪽 메뉴 */
+  .app.wide .tabbar {
+    left: 0; top: 0; bottom: 0; transform: none; width: var(--side-w); max-width: none;
+    display: flex; flex-direction: column; gap: 4px; padding: 24px 14px;
+    border-top: none; border-right: 1px solid var(--line);
+  }
+  .app.wide .nav-brand { display: flex; flex-direction: column; gap: 2px; padding: 0 12px 20px; }
+  .nav-logo { font-size: 22px; line-height: 30px; font-weight: 700; letter-spacing: -0.4px; color: var(--accent-strong); }
+  .app.wide .tabbar button {
+    height: 44px; flex-direction: row; justify-content: flex-start; gap: 10px; padding: 0 12px;
+    font-size: 15px; border-radius: 12px; color: var(--muted);
+  }
+  .app.wide .tabbar button:hover { background: var(--surface); color: var(--ink); }
+  .app.wide .tabbar button[aria-current='page'] { background: var(--tint); color: var(--accent-strong); }
+  .app.wide .tabbar .ind { width: 24px; height: 24px; }
+
+  /* 본문: 한 칸 화면은 읽기 좋은 폭으로 가운데 */
+  .app.wide .screen { width: 100%; max-width: 760px; margin: 0 auto; padding: 28px 32px 48px; background: var(--bg); min-height: 100dvh; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  .app.wide.has-dock .screen { padding-bottom: calc(48px + var(--dock-h, 0px)); }
+
+  /* 설정: 카드를 두 줄로 */
+  .app.wide .screen.two-col { max-width: 1080px; display: block; columns: 2; column-gap: 16px; }
+  .app.wide .screen.two-col > * { break-inside: avoid; margin-bottom: 14px; }
+  .app.wide .screen.two-col > .topbar { column-span: all; }
+
+  /* 홈 대시보드: 오늘 | 일정 | 할 일. 칸마다 따로 스크롤 */
+  .dash { display: grid; grid-template-columns: minmax(380px, 1fr) minmax(380px, 1.15fr); height: 100dvh; }
+  .dash.three { grid-template-columns: minmax(360px, 1fr) minmax(380px, 1.15fr) minmax(340px, 1fr); }
+  .dash-col { overflow-y: auto; min-width: 0; border-right: 1px solid var(--line); background: var(--bg); overscroll-behavior: contain; }
+  .dash-col:last-child { border-right: none; }
+  .app.wide .dash .screen { max-width: none; min-height: 100%; padding: 24px 24px 40px; border: none; }
+  .app.wide.has-dock .dash .screen { padding-bottom: calc(40px + var(--dock-h, 0px)); }
+
+  /* 아래 창은 가운데 창으로 */
+  .wide .sheet-back { align-items: center; padding-left: var(--side-w); }
+  .wide .sheet { max-width: 520px; max-height: 86dvh; border-radius: 20px; padding-bottom: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+  .wide .sheet .grab { display: none; }
+
+  /* 알림 띠·일정 체크 팝업은 본문 가운데 아래 */
+  .app.wide .toast { left: calc(50% + var(--side-w) / 2); bottom: 24px; }
+  .app.wide.has-dock .toast { bottom: calc(36px + var(--dock-h, 0px)); }
+  .app.wide .now-dock { left: calc(50% + var(--side-w) / 2); bottom: 20px; max-width: 460px; }
+  .app.wide .pop-back { padding-left: calc(20px + var(--side-w)); }
+}

@@ -23,6 +23,7 @@
 - 셋 데이: `engine/setDay.ts` (기상 ±30분 + 습관 70%)
 - 교정: `engine/correction.ts` (80% 이상 올림, 50% 미만 내림, 피곤함 2회 유지)
 - 코칭: `engine/coaching.ts` (R1~R9, 하루 3건, 2회 연속 거절 시 7일 쉼)
+- PC 화면(1024px 이상): `motion.ts`의 `useMedia(WIDE_QUERY)` → 왼쪽 메뉴, 홈은 오늘·일정·할 일 대시보드(1360px 이상 3칸), 설정은 두 줄. CSS는 `styles.css` 맨 아래. 1023px 이하 폰 화면은 바꾸지 않는다.
 - 모션: `src/ui/motion.ts`(탭 스와이프·전환), `styles.css` 아래쪽 모션 블록(눌림·스프링). 동작 줄이기 설정을 따른다.
 - 연속 기록: `src/app/streak.ts`, 친구 코드·순위: `src/app/social.ts`, 공유 카드: `src/ui/share.ts`, 화면: `src/ui/Social.tsx`.
 - 시연: `src/ui/screens/Demo.tsx`, 캘린더 추가 예시안 A·B·C: `src/ui/AddEvent.tsx`, 한 줄 해석: `src/app/nlp.ts`, 바뀜 미리보기: `derive.ts`의 `comparePlans`·`eventImpact`.
