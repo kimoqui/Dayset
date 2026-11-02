@@ -275,6 +275,8 @@ class DeviceSync implements NotifyPort {
             warningNotificationOnKill: false,
             androidFullScreenIntent: true,
             payload: w.key,
+            // const로 만들면 패키지 안 assert가 상수 계산에서 실패한다.
+            // ignore: prefer_const_constructors
             volumeSettings: VolumeSettings.fade(fadeDuration: const Duration(seconds: 8)),
             notificationSettings: NotificationSettings(title: w.title, body: w.body, stopButton: w.kind == RingKind.wake ? '일어났어요' : '확인'),
           ),
