@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ACTIVITY_LABEL, type Activity, dateKey } from '../engine/models';
-import { canUndo, canUndoPlan, dueAlarms, ensureDay, markAsked, markNudged, markOpen, now, type Ring, skipCheck, tap, track, undoPlanChange, undoTap, useAppState } from '../app/store';
+import { ACTIVITY_LABEL, type Activity, dateKey, formatHm } from '../engine/models';
+import { objectParticle } from '../engine/coaching';
+import { canUndo, canUndoPlan, dueAlarms, ensureDay, markAsked, markNudged, markOpen, now, type Ring, skipCheck, tap, tapAt, type TapOutcome, track, undoPlanChange, undoTap, useAppState } from '../app/store';
 import { checkKey, nowCheck } from '../app/nowCheck';
 import { NowDock } from './NowDock';
 import { ConsentPanel } from './Preview';
 import { clearNowNotification, listenNotifyActions, noticeFor, permission, showNowNotification } from './notify';
 import { currentLog } from '../app/derive';
 import { AlarmOverlay } from './AlarmOverlay';
-import { DASH3_QUERY, haptic, useMedia, useSwipeTabs, WIDE_QUERY } from './motion';
+import { haptic, useMedia, useSwipeTabs, WIDE_QUERY } from './motion';
 import { Celebrate } from './Social';
 import { computeStreak, reachedMilestone } from '../app/streak';
 import { ObsPopup, type ObsPopupKind } from './ObsPopup';
@@ -130,11 +131,13 @@ export function App() {
 
   /** 일정 체크 팝업·알림 버튼에서 기록한다. */
   const recordFrom = useCallback(
-    (a: Activity, via: 'popup' | 'notify') => {
-      const r = tap(a);
+    (a: Activity, via: 'popup' | 'notify', at?: Date) => {
+      const r: TapOutcome & { error?: string } = at ? tapAt(a, at) : tap(a);
       haptic(12);
-      track(via === 'popup' ? 'check_record' : 'notify_record', a);
-      showToast(r.changed ? `${ACTIVITY_LABEL[a]} 시작을 기록했어요` : `이미 ${ACTIVITY_LABEL[a]} 기록 중이에요`, r.changed);
+      track(via === 'popup' ? (at ? 'check_record_late' : 'check_record') : 'notify_record', a);
+      if (!r.changed) showToast(`이미 ${ACTIVITY_LABEL[a]} 기록 중이에요`);
+      else if (r.error) showToast(`${ACTIVITY_LABEL[a]} 시작을 지금으로 기록했어요. ${r.error}`);
+      else showToast(at ? `${ACTIVITY_LABEL[a]}${objectParticle(ACTIVITY_LABEL[a])} ${formatHm(at)}부터로 기록했어요` : `${ACTIVITY_LABEL[a]} 시작을 기록했어요`, !at);
     },
     [showToast],
   );
@@ -222,7 +225,6 @@ export function App() {
 
   const tab: Tab | null = page === 'evening' || page === 'review' || page === 'demo' ? null : page;
   const wide = useMedia(WIDE_QUERY);
-  const dash3 = useMedia(DASH3_QUERY);
   const swipe = useSwipeTabs<Tab>({ tabs: TABS.map((t) => t.id), current: tab, onChange: setPage });
   /** 탭이면 방향 모션으로, 그 밖의 화면(저녁 확인·내 하루 보기)은 밀려 들어오는 모션으로 연다. */
   const open = (to: Page) => {
@@ -274,20 +276,7 @@ export function App() {
         <Home s={s} now={nowValue} onTap={onTap} go={open} theme={resolvedTheme()} toggleTheme={toggleTheme} showGuide={() => setPopup('intro')} streak={streakInfo?.current ?? 0} toast={showToast} />
       )}
       {page === 'home' && wide && (
-        // PC: 오늘(링·기록 버튼) | 일정 | 할 일을 한 화면에. 칸마다 따로 스크롤한다.
-        <div className={`dash ${dash3 ? 'three' : ''}`}>
-          <div className="dash-col">
-            <Home s={s} now={nowValue} onTap={onTap} go={open} theme={resolvedTheme()} toggleTheme={toggleTheme} showGuide={() => setPopup('intro')} streak={streakInfo?.current ?? 0} toast={showToast} />
-          </div>
-          <div className="dash-col">
-            <Schedule s={s} now={nowValue} toast={showToast} openDemo={() => open('demo')} />
-          </div>
-          {dash3 && (
-            <div className="dash-col">
-              <Tasks s={s} now={nowValue} toast={showToast} />
-            </div>
-          )}
-        </div>
+        <Home desk s={s} now={nowValue} onTap={onTap} go={open} theme={resolvedTheme()} toggleTheme={toggleTheme} showGuide={() => setPopup('intro')} streak={streakInfo?.current ?? 0} toast={showToast} />
       )}
       {page === 'schedule' && <Schedule s={s} now={nowValue} toast={showToast} openDemo={() => open('demo')} />}
       {page === 'demo' && <Demo s={s} now={nowValue} onBack={() => setPage('schedule')} />}

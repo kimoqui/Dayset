@@ -13,6 +13,7 @@ import 'derive.dart';
 import 'duration.dart';
 import 'edits.dart';
 import 'ics.dart';
+import 'log_edit.dart';
 import 'metrics.dart';
 import 'priority_model.dart';
 import 'state.dart';
@@ -40,9 +41,12 @@ class ImportOutcome extends PlanChange {
 }
 
 class TapOutcome {
-  const TapOutcome({required this.changed, this.merged = false});
+  const TapOutcome({required this.changed, this.merged = false, this.error});
   final bool changed;
   final bool merged;
+
+  /// tapAt: 고른 시각으로 바꾸지 못한 이유(기록은 지금부터로 남는다).
+  final String? error;
 }
 
 enum RingKind { wake, bed }
@@ -331,6 +335,26 @@ class Store {
     if (!tr.undo(now())) return false;
     _set((s) => _commitLogs(s, tr.logs));
     return true;
+  }
+
+  /// 기록 시각 고치기. 고치지 못하면 이유를 돌려준다.
+  String? retimeLog(String id, DateTime start, DateTime? end) {
+    final r = retimeLogs(_state.logs, id, start, end, now());
+    if (r.error != null) return r.error;
+    _tracker = null; // 바꾼 기록으로 '지금' 버튼 상태를 새로 만든다(되돌리기는 끝난다).
+    _set((s) => s.copyWith(logs: r.logs));
+    track('log_retime');
+    return null;
+  }
+
+  /// 제때 누르지 못했을 때: at 시각부터 그 활동을 한 것으로 기록한다(앞 기록은 at에 끝난다).
+  /// at이 앞 기록보다 이르면 지금부터로 남기고 이유를 돌려준다.
+  TapOutcome tapAt(Activity activity, DateTime at, {LogSource source = LogSource.button}) {
+    final r = tap(activity, source: source);
+    final cur = currentLog(_state);
+    if (!r.changed || cur == null || cur.activity != activity || diffMin(cur.start, at) < 1) return r;
+    final err = retimeLog(cur.id, at, null);
+    return err == null ? r : TapOutcome(changed: r.changed, merged: r.merged, error: err);
   }
 
   void deleteLog(String id) => _set((s) => s.copyWith(logs: s.logs.where((l) => l.id != id).toList()));

@@ -184,7 +184,6 @@ export function useSwipeTabs<T extends string>(opts: { tabs: T[]; current: T | n
 
 /** 넓은 화면(PC 브라우저, 1024px 이상)인지. 폰·태블릿 세로는 지금 화면 그대로 둔다. */
 export const WIDE_QUERY = '(min-width: 1024px)';
-export const DASH3_QUERY = '(min-width: 1360px)';
 function media(q: string): boolean {
   try {
     return window.matchMedia(q).matches;

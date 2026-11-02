@@ -13,9 +13,9 @@ import {
   weekdayLabel,
 } from '../../engine/models';
 import { logsAround, monthKeys, periodStats, weekKeys } from '../../app/derive';
-import { deleteLog } from '../../app/store';
+import { deleteLog, retimeLog } from '../../app/store';
 import type { AppState } from '../../app/state';
-import { activityColor, Icon, pct, Segmented } from '../kit';
+import { activityColor, Icon, pct, Segmented, Sheet, TimeField } from '../kit';
 import { computeStreak } from '../../app/streak';
 import { StreakCard } from '../Social';
 
@@ -49,7 +49,7 @@ export function Stats({ s, now, openEvening, toast }: { s: AppState; now: Date; 
       {view === 'week' && (
         <>
           <StreakCard s={s} info={info} toast={toast} share={false} />
-          <Week s={s} now={now} todayKey={todayKey} />
+          <Week s={s} now={now} todayKey={todayKey} toast={toast} />
         </>
       )}
       {view === 'month' && <Month s={s} now={now} todayKey={todayKey} offset={monthOffset} setOffset={setMonthOffset} />}
@@ -57,7 +57,8 @@ export function Stats({ s, now, openEvening, toast }: { s: AppState; now: Date; 
   );
 }
 
-function Week({ s, now, todayKey }: { s: AppState; now: Date; todayKey: string }) {
+function Week({ s, now, todayKey, toast }: { s: AppState; now: Date; todayKey: string; toast: (t: string) => void }) {
+  const [editing, setEditing] = useState<string | null>(null);
   const keys = weekKeys(now);
   const stats = useMemo(() => periodStats(s, keys, now), [s, now]); // eslint-disable-line react-hooks/exhaustive-deps
   const byKey = new Map(stats.days.map((d) => [d.key, d]));
@@ -144,14 +145,14 @@ function Week({ s, now, todayKey }: { s: AppState; now: Date; todayKey: string }
       <section className="col" aria-label="오늘 기록">
         <div className="section-title">
           <h2 className="t-h2">오늘 기록</h2>
-          <span className="t-label">잘못 누른 기록은 지울 수 있어요</span>
+          <span className="t-label">눌러서 시각을 고치거나 지워요</span>
         </div>
         <div className="card list">
           {todayLogs.length === 0 && <div className="empty">아직 기록이 없어요. 홈의 '지금' 버튼을 눌러 보세요.</div>}
           {todayLogs
             .filter((l) => !isEstimate(l))
             .map((l) => (
-              <div key={l.id} className="line-row">
+              <button key={l.id} type="button" className="line-row list-btn" onClick={() => setEditing(l.id)} aria-label={`${ACTIVITY_LABEL[l.activity]} ${formatHm(l.start)}부터 기록 고치기`}>
                 <span className="bar" style={{ background: activityColor(l.activity) }} />
                 <span className="grow">{ACTIVITY_LABEL[l.activity]}</span>
                 <span className="t-label num">
@@ -160,13 +161,12 @@ function Week({ s, now, todayKey }: { s: AppState; now: Date; todayKey: string }
                 <span className="t-small" style={{ width: 30, textAlign: 'right' }}>
                   {SOURCE_LABEL[l.source]}
                 </span>
-                <button type="button" className="icon-btn" aria-label={`${ACTIVITY_LABEL[l.activity]} 기록 지우기`} onClick={() => deleteLog(l.id)} style={{ marginRight: -10 }}>
-                  <Icon name="trash" size={16} />
-                </button>
-              </div>
+                <span className="edit-hint">고치기</span>
+              </button>
             ))}
         </div>
       </section>
+      {editing && <LogEditSheet s={s} id={editing} now={now} toast={toast} onClose={() => setEditing(null)} />}
     </>
   );
 }
@@ -260,5 +260,55 @@ function Month({ s, now, todayKey, offset, setOffset }: { s: AppState; now: Date
         })}
       </section>
     </>
+  );
+}
+
+/** 기록 시각 고치기 창: 제때 누르지 못했으면 시작·끝 시각을 바꾼다. */
+function LogEditSheet({ s, id, now, toast, onClose }: { s: AppState; id: string; now: Date; toast: (t: string) => void; onClose: () => void }) {
+  const log = s.logs.find((l) => l.id === id);
+  const mins = (d: Date) => d.getHours() * 60 + d.getMinutes();
+  const [start, setStart] = useState(log ? mins(log.start) : 0);
+  const [end, setEnd] = useState(log?.end ? mins(log.end) : 0);
+  const [error, setError] = useState<string | null>(null);
+  if (!log) return null;
+  const label = ACTIVITY_LABEL[log.activity];
+  /** 원래 날짜는 두고 시각만 바꾼다(밤을 넘긴 수면은 시작 날짜·끝 날짜를 따로 쓴다). */
+  const on = (base: Date, m: number) => new Date(base.getFullYear(), base.getMonth(), base.getDate(), Math.floor(m / 60), m % 60);
+  const save = () => {
+    const err = retimeLog(log.id, on(log.start, start), log.end ? on(log.end, end) : null);
+    if (err) {
+      setError(err);
+      return;
+    }
+    toast(`${label} 기록을 ${formatClock(start)}${log.end ? `–${formatClock(end)}` : '부터'}로 고쳤어요`);
+    onClose();
+  };
+  const changed = start !== mins(log.start) || (!!log.end && end !== mins(log.end));
+  return (
+    <Sheet title={`${label} 기록 고치기`} onClose={onClose}>
+      <span className="t-label">
+        지금 {formatHm(log.start)}–{log.end ? formatHm(log.end) : `지금(${formatHm(now)})`}. 제때 누르지 못했으면 실제 시각으로 바꿔요. 겹치는 앞뒤 기록은 맞닿게 줄여요.
+      </span>
+      <div className="field-row">
+        <TimeField label="시작" value={start} onChange={(v) => { setStart(v); setError(null); }} />
+        {log.end ? <TimeField label="끝" value={end} onChange={(v) => { setEnd(v); setError(null); }} /> : <div className="col" style={{ justifyContent: 'flex-end' }}><span className="t-label">끝: 진행 중</span></div>}
+      </div>
+      {error && <span className="t-label" role="alert" style={{ color: 'var(--miss)' }}>{error}</span>}
+      <button type="button" className="btn primary block" disabled={!changed} onClick={save}>
+        바꾸기
+      </button>
+      <button
+        type="button"
+        className="btn small danger"
+        style={{ alignSelf: 'flex-start' }}
+        onClick={() => {
+          deleteLog(log.id);
+          toast(`${label} 기록을 지웠어요`);
+          onClose();
+        }}
+      >
+        기록 지우기
+      </button>
+    </Sheet>
   );
 }

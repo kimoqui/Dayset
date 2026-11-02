@@ -15,6 +15,7 @@ lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app�
   cloud / cloud_sync 계정 연동(Supabase, 웹 cloud.ts·cloudSync.ts와 같은 규칙), cloud_config 서버 주소·공개 키
   edits.dart       일정 바꾸기 목록·적용·미리보기(그날만=overrides / 매일=goals), Store.applyEdits로 적용
   chat_command.dart 채팅 글 → 바꾸기 목록(기기 안 규칙)
+  log_edit.dart    기록 시각 고치기(웹 logEdit.ts와 같은 규칙), Store.retimeLog·tapAt
   ai_chat.dart     로그인하면 서버 AI(supabase/functions/dayset-chat)가 먼저 읽는다: 보낼 요약·받은 답 검사, 실패하면 규칙
 lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
 lib/ui             화면 — 웹 src/ui와 1:1

@@ -15,17 +15,21 @@ export function NowDock({
   onSkip,
 }: {
   check: NowCheck;
-  onRecord: (a: Activity, via: 'popup') => void;
+  /** at: 제때 누르지 못했을 때 실제로 시작한(끝난) 시각. 없으면 지금. */
+  onRecord: (a: Activity, via: 'popup', at?: Date) => void;
   onSkip: (id: string) => void;
 }) {
   const key = checkKey(check);
   const alert = (check.kind === 'due' || check.kind === 'over') && !check.skipped;
   const [min, setMin] = useState(!alert);
+  // 늦게 눌렀을 때 고르는 시각: 'now' | 'plan' | 직접 고른 분(0~1439)
+  const [when, setWhen] = useState<'now' | 'plan' | number>('plan');
   const ref = useRef<HTMLDivElement>(null);
 
   // 새로 기록할 일이 생기면 다시 펼친다.
   useEffect(() => {
     setMin(!alert);
+    setWhen('plan');
   }, [key, alert]);
 
   // 팝업 높이를 알려 토스트·화면 아래 여백이 가리지 않게 한다.
@@ -82,6 +86,38 @@ export function NowDock({
   // 펼친 팝업: 기록하라는 알림
   const exp = check.expected!;
   const isOver = check.kind === 'over';
+  // 일정 시각에서 5분 넘게 지났으면 '언제 시작(끝)했는지'를 고르게 한다.
+  const planAt = isOver ? b!.end : b!.start;
+  const nowAt = new Date(planAt.getTime() + check.minutes * 60_000);
+  const late = check.minutes >= 5;
+  const pickAt = (): Date | undefined => {
+    if (!late || when === 'now') return undefined;
+    if (when === 'plan') return planAt;
+    const d = new Date(nowAt.getFullYear(), nowAt.getMonth(), nowAt.getDate(), Math.floor(when / 60), when % 60);
+    return d.getTime() > nowAt.getTime() ? new Date(d.getTime() - 86_400_000) : d;
+  };
+  const hm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const whenRow = late && (
+    <div className="dock-when" role="group" aria-label={isOver ? '끝난 시각' : '시작한 시각'}>
+      <span className="t-label">{isOver ? '끝난 시각' : '시작한 시각'}</span>
+      <button type="button" className="chip" aria-checked={when === 'plan'} role="radio" onClick={() => setWhen('plan')}>
+        일정대로 {formatHm(planAt)}
+      </button>
+      <button type="button" className="chip" aria-checked={when === 'now'} role="radio" onClick={() => setWhen('now')}>
+        지금 {formatHm(nowAt)}
+      </button>
+      <input
+        type="time"
+        aria-label="다른 시각"
+        className={typeof when === 'number' ? 'on' : ''}
+        value={typeof when === 'number' ? hm(when) : ''}
+        onChange={(e) => {
+          const [h, m] = e.target.value.split(':').map(Number);
+          if (Number.isFinite(h) && Number.isFinite(m)) setWhen(h * 60 + m);
+        }}
+      />
+    </div>
+  );
   return (
     <div ref={ref} className="now-dock open" role="alertdialog" aria-label="일정 체크">
       <div className="row between">
@@ -98,14 +134,15 @@ export function NowDock({
           ? `${formatHm(b!.end)}에 끝나는 일정이었어요 · 지금 기록: ${cur}`
           : `지금 기록: ${cur} · ${LABEL_SHORT[exp]}${objectParticle(LABEL_SHORT[exp])} 시작했으면 눌러 주세요`}
       </span>
+      {whenRow}
       <div className="row" style={{ gap: 8 }}>
         {isOver ? (
           <>
-            <button type="button" className="btn primary grow" onClick={() => onRecord('rest', 'popup')}>
+            <button type="button" className="btn primary grow" onClick={() => onRecord('rest', 'popup', pickAt())}>
               끝났어요 · 휴식
             </button>
             {next && expectedActivity(next) && expectedActivity(next) !== exp && (
-              <button type="button" className="btn grow" onClick={() => onRecord(expectedActivity(next)!, 'popup')}>
+              <button type="button" className="btn grow" onClick={() => onRecord(expectedActivity(next)!, 'popup', pickAt())}>
                 {next ? `${LABEL_SHORT[expectedActivity(next)!]} 시작` : ''}
               </button>
             )}
@@ -115,7 +152,7 @@ export function NowDock({
           </>
         ) : (
           <>
-            <button type="button" className="btn primary grow" onClick={() => onRecord(exp, 'popup')}>
+            <button type="button" className="btn primary grow" onClick={() => onRecord(exp, 'popup', pickAt())}>
               {LABEL_SHORT[exp]} 시작했어요
             </button>
             <button type="button" className="btn" onClick={() => onSkip(b!.id)}>

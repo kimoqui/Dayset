@@ -679,13 +679,55 @@ a.btn { text-decoration: none; color: inherit; }
   .app.wide .screen.two-col > * { break-inside: avoid; margin-bottom: 14px; }
   .app.wide .screen.two-col > .topbar { column-span: all; }
 
-  /* 홈 대시보드: 오늘 | 일정 | 할 일. 칸마다 따로 스크롤 */
-  .dash { display: grid; grid-template-columns: minmax(380px, 1fr) minmax(380px, 1.15fr); height: 100dvh; }
-  .dash.three { grid-template-columns: minmax(360px, 1fr) minmax(380px, 1.15fr) minmax(340px, 1fr); }
-  .dash-col { overflow-y: auto; min-width: 0; border-right: 1px solid var(--line); background: var(--bg); overscroll-behavior: contain; }
-  .dash-col:last-child { border-right: none; }
-  .app.wide .dash .screen { max-width: none; min-height: 100%; padding: 24px 24px 40px; border: none; }
-  .app.wide.has-dock .dash .screen { padding-bottom: calc(40px + var(--dock-h, 0px)); }
+  /* 글자·부품을 PC 거리에서 읽기 좋은 크기로 */
+  .app.wide { font-size: 17px; line-height: 26px; }
+  .app.wide .t-title { font-size: 30px; line-height: 40px; }
+  .app.wide .t-sub { font-size: 21px; line-height: 30px; }
+  .app.wide .t-h2 { font-size: 18px; line-height: 26px; }
+  .app.wide .t-body { font-size: 16px; line-height: 25px; }
+  .app.wide .t-label { font-size: 14px; line-height: 21px; }
+  .app.wide .t-small { font-size: 13px; line-height: 18px; }
+  .app.wide .screen { gap: 20px; }
+  .app.wide .card { padding: 22px 24px; border-radius: 22px; gap: 14px; }
+  .app.wide .card.list { padding: 6px 24px; }
+  .app.wide .btn { height: 48px; font-size: 16px; padding: 0 22px; }
+  .app.wide .btn.small { height: 40px; font-size: 15px; padding: 0 16px; border-radius: 20px; }
+  .app.wide .chip { font-size: 15px; height: 40px; padding: 0 16px; border-radius: 20px; }
+  .app.wide .pill { font-size: 13px; padding: 3px 10px; }
+  .app.wide .seg button { font-size: 16px; min-height: 44px; }
+  .app.wide .line-row { min-height: 52px; gap: 16px; font-size: 17px; }
+  .app.wide .edit-hint { font-size: 13px; }
+  .app.wide .now-dock.slim { font-size: 16px; min-height: 56px; }
+  .app.wide .now-dock .dock-title { font-size: 20px; line-height: 28px; }
+  .app.wide .line-row .time { width: 56px; font-size: 16px; }
+  .app.wide .line-row .bar { height: 28px; }
+  .app.wide .line-row .tag { font-size: 14px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--future); }
+  .app.wide .line-row .tag.on { background: var(--pill-bg); }
+  .app.wide .line-row .tag.miss { background: transparent; }
+  .app.wide .theme-btn, .app.wide .streak-chip { font-size: 15px; }
+  .app.wide .legend { font-size: 14px; gap: 8px 18px; }
+  .app.wide .legend i { width: 10px; height: 10px; border-radius: 5px; }
+  .app.wide .input { height: 48px; font-size: 16px; }
+  .app.wide .empty { font-size: 16px; }
+
+  /* 홈(PC): 지금 | 오늘 두 칸 */
+  .app.wide .screen.desk-home { max-width: 1120px; padding: 40px 48px 56px; gap: 32px; }
+  .desk-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .desk-grid { display: grid; grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr); gap: 48px; align-items: start; }
+  .desk-now { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 28px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 28px; }
+  .desk-now .dayring { gap: 14px; }
+  .desk-now .dayring .wrap-ring { width: 340px; height: 340px; }
+  .desk-now .dayring .wrap-ring svg { width: 100%; height: 100%; }
+  .desk-now .dayring .status { font-size: 34px; line-height: 44px; }
+  .desk-now .dayring .now-pill { font-size: 14px; padding: 4px 12px; }
+  .desk-now .round-btns { width: 100%; max-width: 420px; }
+  .desk-now .round-btn { width: 72px; }
+  .desk-now .round-btn .c { width: 64px; height: 64px; border-radius: 32px; }
+  .desk-now .round-btn span:last-child { font-size: 15px; }
+  .desk-side { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+  .desk-next { display: flex; flex-direction: column; gap: 6px; padding: 24px 26px; border-radius: 24px; background: var(--tint); border: 1px solid var(--tint-line); }
+  .desk-next-main { font-size: 26px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; }
+  .desk-next-main .num { color: var(--accent-strong); margin-right: 6px; }
 
   /* 아래 창은 가운데 창으로 */
   .wide .sheet-back { align-items: center; padding-left: var(--side-w); }
@@ -698,3 +740,11 @@ a.btn { text-decoration: none; color: inherit; }
   .app.wide .now-dock { left: calc(50% + var(--side-w) / 2); bottom: 20px; max-width: 460px; }
   .app.wide .pop-back { padding-left: calc(20px + var(--side-w)); }
 }
+.line-row.list-btn { border-bottom: 1px solid var(--line); min-height: 48px; }
+.line-row.list-btn:last-child { border-bottom: none; }
+
+/* 일정 체크 팝업: 늦게 눌렀을 때 시각 고르기 */
+.dock-when { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dock-when .chip { height: 32px; padding: 0 12px; font-size: 13px; }
+.dock-when input[type='time'] { height: 32px; border-radius: 16px; border: 1.5px solid var(--line-strong); background: transparent; padding: 0 10px; font-size: 13px; color: var(--ink); }
+.dock-when input[type='time'].on { border-color: var(--accent); background: var(--pill-bg); }

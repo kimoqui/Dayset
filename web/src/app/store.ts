@@ -44,6 +44,7 @@ import type { ImportedEvent } from './ics';
 import type { Friend } from './social';
 import { snapshot } from './priorityModel';
 import { applyEdit, type ScheduleEdit } from './edits';
+import { retimeLogs } from './logEdit';
 
 // ---------------------------------------------------------------------------
 // 시계. 주소에 ?t=2026-10-19T07:00 을 붙이면 그 시각부터 흐른다(시험용).
@@ -279,6 +280,28 @@ export function undoTap(): boolean {
   if (!tr.undo(now())) return false;
   set((s) => commitLogs(s, tr.logs));
   return true;
+}
+
+/** 기록 시각 고치기. 고치지 못하면 이유를 돌려준다. */
+export function retimeLog(id: string, start: Date, end: Date | null): string | null {
+  const r = retimeLogs(state.logs, id, start, end, now());
+  if (!r.ok) return r.error;
+  tracker = null; // 바꾼 기록으로 '지금' 버튼 상태를 새로 만든다(되돌리기는 끝난다).
+  set((s) => ({ ...s, logs: r.logs }));
+  track('log_retime');
+  return null;
+}
+
+/**
+ * 제때 누르지 못했을 때: at 시각부터 그 활동을 한 것으로 기록한다(앞 기록은 at에 끝난다).
+ * at이 앞 기록보다 이르면 지금부터로 남기고 이유를 돌려준다.
+ */
+export function tapAt(activity: Activity, at: Date, source: ActivityLog['source'] = 'button'): TapOutcome & { error?: string } {
+  const r = tap(activity, source);
+  const cur = currentLog(state);
+  if (!r.changed || !cur || cur.activity !== activity || diffMin(cur.start, at) < 1) return r;
+  const err = retimeLog(cur.id, at, null);
+  return err ? { ...r, error: err } : r;
 }
 
 export function deleteLog(id: string): void {

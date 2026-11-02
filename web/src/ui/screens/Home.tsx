@@ -17,7 +17,10 @@ export function Home({
   showGuide,
   streak,
   toast,
+  desk = false,
 }: {
+  /** PC 브라우저(넓은 화면): 두 칸, 큰 글자, 알림 카드는 한 번에 하나만. */
+  desk?: boolean;
   toast: (t: string) => void;
   s: AppState;
   now: Date;
@@ -75,6 +78,167 @@ export function Home({
     !observingToday && !woke && isBefore(now, plan.wake)
       ? { label: '기상 알람', at: plan.wake, reason: plan.alarms[0].reason }
       : { label: '취침 알림', at: tomorrow.bedTonight, reason: tomorrow.alarms[1].reason };
+
+  if (desk) {
+    const storageBanner = !storageAvailable() && (
+      <div className="banner">
+        {storageProblem() === 'quota'
+          ? '저장 공간이 가득 차 새 기록을 저장하지 못하고 있어요. 설정 → 데이터에서 백업을 내보낸 뒤 가져온 캘린더 연결을 끊거나 기록을 정리해 주세요.'
+          : '이 브라우저에서는 기록을 저장할 수 없어요. 창을 닫으면 기록이 사라져요.'}
+      </div>
+    );
+    // 알림 카드는 가장 중요한 하나만 보여 준다.
+    const notice = storageBanner ? (
+      storageBanner
+    ) : recording && obs ? (
+      todayKey < obs.day1 ? (
+        <button type="button" className="hint-chip" onClick={showGuide}>
+          <Icon name="sleep" size={16} /> 내일이 1일차예요 · 잘 때 '수면' 누르기
+        </button>
+      ) : (
+        <RecordingCard s={s} now={now} day1={obs.day1} onReview={() => go('review')} />
+      )
+    ) : inbox ? (
+      <section className="card" aria-label="코칭 제안" style={{ gap: 12 }}>
+        <p className="t-body" style={{ margin: 0 }}>
+          <Lead text={inbox.message} />
+        </p>
+        <div className="row" style={{ gap: 8 }}>
+          {inbox.kind === 'coach' && (
+            <button type="button" className="btn primary" onClick={() => acceptSuggestion(inbox.id)}>
+              바꾸기
+            </button>
+          )}
+          <button type="button" className="btn" onClick={() => keepSuggestion(inbox.id)}>
+            {inbox.kind === 'coach' ? '그대로 두기' : '확인'}
+          </button>
+        </div>
+      </section>
+    ) : showEvening ? (
+      <section className="card tint" aria-label="저녁 확인">
+        <div className="row between">
+          <div className="col" style={{ gap: 2 }}>
+            <span className="t-h2">오늘 하루 확인</span>
+            <span className="t-label">기록 없는 일정만 골라요 · 1분이면 끝나요</span>
+          </div>
+          <button type="button" className="btn primary small" onClick={() => go('evening')}>
+            확인하기
+          </button>
+        </div>
+      </section>
+    ) : resolved?.resultText ? (
+      <section className="card" aria-label="코칭 결과">
+        <p className="t-body" style={{ margin: 0 }}>
+          <Lead text={resolved.resultText} />
+        </p>
+      </section>
+    ) : (
+      <SurveyCard s={s} now={now} toast={toast} />
+    );
+    return (
+      <div className="screen desk-home">
+        <header className="desk-head">
+          <div className="col" style={{ gap: 4 }}>
+            <span className="row" style={{ gap: 10 }}>
+              <span className="t-body muted">{koreanDate(now)}</span>
+              {!observingToday && (
+                <button type="button" className="streak-chip" aria-label={`${streak}일 연속 셋 데이, 소셜 보기`} onClick={() => go('social')}>
+                  <Flame size={16} color={streak > 0 ? 'var(--accent)' : 'var(--line-btn)'} />
+                  <span className="num">{streak}</span>
+                </button>
+              )}
+            </span>
+            <h1 className="t-title">
+              {recording ? '오늘은 하루를 그대로 기록해요' : observingToday ? '내일 일정을 만들었어요' : '오늘 일정은 자동으로 짜뒀어요'}
+            </h1>
+          </div>
+          <button type="button" className="theme-btn" aria-label={theme === 'dark' ? '밝은 화면으로 바꾸기' : '나이트 화면으로 바꾸기'} onClick={toggleTheme}>
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            {theme === 'dark' ? '밝게' : '나이트'}
+          </button>
+        </header>
+
+        <div className="desk-grid">
+          <section className="desk-now" aria-label="지금">
+            <div className="dayring">
+              <DayRing
+                plan={ringPlan}
+                records={ringRecords}
+                recordsOnly={observingToday}
+                nowMinutes={nowMin}
+                label={`오늘 24시간 링. 지금 ${formatHm(now)}, ${cur ? `${ACTIVITY_LABEL[cur.activity]} 중` : '기록 없음'}`}
+              >
+                <span className="now-pill num">지금 {formatHm(now)}</span>
+                <span className="status">{cur ? `${ACTIVITY_LABEL[cur.activity]} 중` : '기록 없음'}</span>
+                <span className="t-body muted">{cur ? `${formatDuration(Math.max(0, minutesUntil(cur, now)))}째` : '아래 버튼으로 시작해요'}</span>
+              </DayRing>
+              <div className="legend">
+                {(['sleep', 'meal', 'work', 'exercise'] as const).map((a) => (
+                  <span key={a}>
+                    <i style={{ background: `var(--${a})` }} />
+                    {ACTIVITY_LABEL[a]}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="round-btns" role="group" aria-label="지금 상태 바꾸기">
+              {ACTIVITIES.map((a) => (
+                <button key={a} type="button" className="round-btn" aria-pressed={cur?.activity === a} aria-label={`${ACTIVITY_LABEL[a]} 시작`} onClick={() => onTap(a)}>
+                  <span className="c">
+                    <Icon name={a} size={26} />
+                  </span>
+                  <span>{ACTIVITY_LABEL[a]}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="desk-side" aria-label="오늘">
+            {!recording && (
+              <div className="desk-next">
+                <span className="t-label">{observingToday ? '내일 기상 알람' : '다음'}</span>
+                {observingToday ? (
+                  <span className="desk-next-main num">{formatHm(tomorrow.wake)}</span>
+                ) : next ? (
+                  <>
+                    <span className="desk-next-main">
+                      <span className="num">{formatHm(next.start)}</span> {next.title}
+                    </span>
+                  </>
+                ) : (
+                  <span className="desk-next-main">남은 일정 없음</span>
+                )}
+                <span className="t-body muted num" title={nextAlarm.reason}>
+                  {nextAlarm.label} {formatHm(nextAlarm.at)}
+                </span>
+              </div>
+            )}
+
+            {notice}
+
+            {!observingToday && (
+              <section aria-label="남은 일정" className="col" style={{ gap: 0 }}>
+                <div className="section-title">
+                  <h2 className="t-h2">오늘 남은 일정</h2>
+                  <button type="button" className="btn ghost small" onClick={() => go('schedule')}>
+                    전체 보기
+                  </button>
+                </div>
+                {upcoming.length <= 1 && <div className="empty">{upcoming.length ? '다음 일정 뒤로는 비어 있어요' : '오늘 남은 일정이 없어요'}</div>}
+                {upcoming.slice(1, 6).map((b) => (
+                  <div key={b.id} className="line-row">
+                    <span className="time">{formatHm(b.start)}</span>
+                    <span className="grow ellipsis">{b.title}</span>
+                    <span className={`tag ${b.adjusted ? 'on' : ''}`}>{kindLabel(b)}</span>
+                  </div>
+                ))}
+              </section>
+            )}
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
