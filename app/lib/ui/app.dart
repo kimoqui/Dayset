@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../app/cloud_sync.dart';
 import '../app/derive.dart';
+import '../app/device_plan.dart';
 import '../app/now_check.dart';
 import '../app/state.dart';
 import '../app/store.dart';
@@ -198,6 +199,10 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
 
   /// 알림의 '기록하기'·'지금은 안 해요'. 늦게 눌렀으면 일정 시각부터 기록한다(일정 체크와 같은 규칙).
   void _onNotice(NoticeAction a) {
+    if (a.open == 'evening') {
+      open(AppPage.evening);
+      return;
+    }
     if (a.action == 'skip' && a.skipId != null) {
       store.skipCheck(a.skipId!);
       toast('이번 일정은 넘길게요');
@@ -270,19 +275,27 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
   void _onState() {
     if (!mounted) return;
     setState(() => _now = store.now());
-    final cur = currentLog(store.state);
-    final sig = cur == null ? '' : '${cur.activity.name}@${cur.start.millisecondsSinceEpoch}';
-    if (sig != _publishedCurrent) {
-      _publishedCurrent = sig;
-      widget.bridge?.publishCurrent(cur).catchError((_) {});
-    }
+    _publishWidget();
     _check();
   }
 
   void _refresh() {
     if (!mounted) return;
     setState(() => _now = store.now());
+    _publishWidget();
     _check();
+  }
+
+  /// 홈 화면 위젯에 지금 상태와 둘째 줄(다음 일정·오늘 진행도)을 알린다. 바뀌었을 때만.
+  void _publishWidget() {
+    final b = widget.bridge;
+    if (b == null) return;
+    final cur = currentLog(store.state);
+    final line = widgetLine(store.state, store.now());
+    final sig = '${cur == null ? '' : '${cur.activity.name}@${cur.start.millisecondsSinceEpoch}'}|$line';
+    if (sig == _publishedCurrent) return;
+    _publishedCurrent = sig;
+    b.publishCurrent(cur, line: line).catchError((_) {});
   }
 
   /// 하루 시작 처리, 알람·알림, 관찰 안내, 기념일.
@@ -412,7 +425,7 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
     final r = store.tap(a);
     if (!r.changed) return;
     haptic(10);
-    toast(r.merged ? '${a.label} 기록에 이어 붙였어요' : '${a.label} 시작을 기록했어요', undo: UndoKind.tap);
+    toast('${r.merged ? '${a.label} 기록에 이어 붙였어요' : '${a.label} 시작을 기록했어요'}${_progressText()}', undo: UndoKind.tap);
   }
 
   @override
@@ -425,10 +438,16 @@ class _ShellState extends State<_Shell> with WidgetsBindingObserver implements S
     } else if (r.error != null) {
       toast('${a.label} 시작을 지금으로 기록했어요. ${r.error}');
     } else if (at != null) {
-      toast('${a.label}${objectParticle(a.label)} ${formatHm(at)}부터로 기록했어요');
+      toast('${a.label}${objectParticle(a.label)} ${formatHm(at)}부터로 기록했어요${_progressText()}');
     } else {
-      toast('${a.label} 시작을 기록했어요', undo: UndoKind.tap);
+      toast('${a.label} 시작을 기록했어요${_progressText()}', undo: UndoKind.tap);
     }
+  }
+
+  /// 기록 직후 알림 띠에 붙이는 오늘 진행도(예: ' · 오늘 습관 3/5'). 웹 App.tsx와 같다.
+  String _progressText() {
+    final p = todayProgress(store.state, store.now());
+    return p.total > 0 ? ' · 오늘 습관 ${p.achieved}/${p.total}' : '';
   }
 
   void _undo() {

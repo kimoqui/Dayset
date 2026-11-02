@@ -2,6 +2,7 @@
 """flutter create 로 만든 android/ 에 DaySet 설정을 넣는다(CI에서 실행).
 
 - 앱 이름 DaySet
+- 홈 화면 '지금' 위젯(native/android의 코틀린·리소스·수신기)
 - 권한: 인터넷(계정), 알림, 정확한 알람(기상·취침·일정 시작), 재부팅 뒤 다시 예약, 전체 화면 알람
 - flutter_local_notifications 수신기(예약 알림·재부팅·알림 버튼)
 - desugaring(flutter_local_notifications 요구), minSdk 24
@@ -13,6 +14,7 @@
 
 import os
 import re
+import shutil
 import sys
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else 'android'
@@ -47,6 +49,35 @@ RECEIVERS = '''
 '''
 
 
+NATIVE = os.path.join(os.path.dirname(ROOT) or '.', 'native', 'android')
+PACKAGE_DIR = os.path.join(ROOT, 'app/src/main/kotlin/com/dayset/dayset')
+WIDGET_RECEIVER = '''
+        <!-- 홈 화면 '지금' 위젯 -->
+        <receiver android:name=".NowWidgetProvider" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/now_widget_info" />
+        </receiver>
+'''
+
+
+def copy_widget() -> None:
+    """위젯 코틀린 파일과 리소스를 android/ 안으로 복사한다."""
+    if not os.path.isdir(NATIVE):
+        return
+    os.makedirs(PACKAGE_DIR, exist_ok=True)
+    kt = os.path.join(NATIVE, 'kotlin')
+    for name in os.listdir(kt):
+        shutil.copy(os.path.join(kt, name), os.path.join(PACKAGE_DIR, name))
+    res_src = os.path.join(NATIVE, 'res')
+    res_dst = os.path.join(ROOT, 'app/src/main/res')
+    for folder in os.listdir(res_src):
+        os.makedirs(os.path.join(res_dst, folder), exist_ok=True)
+        for name in os.listdir(os.path.join(res_src, folder)):
+            shutil.copy(os.path.join(res_src, folder, name), os.path.join(res_dst, folder, name))
+
+
 def patch_manifest() -> None:
     s = open(MANIFEST, encoding='utf-8').read()
     s = re.sub(r'android:label="[^"]*"', 'android:label="DaySet"', s, count=1)
@@ -60,6 +91,8 @@ def patch_manifest() -> None:
         s = s.replace('<application', '\n'.join(lines) + '\n    <application', 1)
     if 'ScheduledNotificationReceiver' not in s:
         s = s.replace('</application>', RECEIVERS + '    </application>', 1)
+    if 'NowWidgetProvider' not in s and os.path.isdir(NATIVE):
+        s = s.replace('</application>', WIDGET_RECEIVER + '    </application>', 1)
     open(MANIFEST, 'w', encoding='utf-8').write(s)
 
 
@@ -126,6 +159,7 @@ def patch_gradle() -> None:
 
 
 if __name__ == '__main__':
+    copy_widget()
     patch_manifest()
     patch_gradle()
     print('android 설정을 넣었어요')

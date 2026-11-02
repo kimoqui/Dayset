@@ -221,6 +221,32 @@ export function evaluate(s: AppState, key: string, now: Date): DayView {
   return { ...ev, key, plan, hasData };
 }
 
+/**
+ * 저녁 확인에서 물을 일정: 시작한 습관·할 일 중 기록으로 달성이 확인되지 않은 것 + 이미 답한 것.
+ * open은 아직 답하지 않은 것(‘남은 건 일정대로 했어요’로 한 번에 채울 대상).
+ */
+export function eveningAsk(s: AppState, key: string, now: Date): { blocks: ScheduleBlock[]; open: ScheduleBlock[] } {
+  const view = evaluate(s, key, now);
+  const missed = new Set(s.misses.filter((m) => m.day === key).map((m) => m.blockId));
+  const skipped = new Set(s.skips.filter((m) => m.day === key).map((m) => m.blockId));
+  const did = new Set(s.logs.filter((l) => l.source === 'evening').map((l) => l.id.replace(/^ev-/, '')));
+  const answered = (b: ScheduleBlock) => did.has(b.id) || missed.has(b.id) || skipped.has(b.id);
+  const blocks = view.plan.blocks.filter((b) => {
+    if (!b.activity || b.kind === 'fixed' || b.activity === 'sleep') return false;
+    if (isAfter(b.start, now)) return false;
+    if (answered(b)) return true;
+    const o = view.outcomes.find((x) => x.block.id === b.id);
+    return o != null && o.outcome !== 'achieved' && o.outcome !== 'pending';
+  });
+  return { blocks, open: blocks.filter((b) => !answered(b)) };
+}
+
+/** 오늘 습관 진행도(기록 직후·위젯에 보여 준다). 저녁 확인 머리와 같은 숫자. */
+export function todayProgress(s: AppState, now: Date): { achieved: number; total: number } {
+  const v = evaluate(s, dateKey(now), now);
+  return { achieved: v.achieved, total: v.total };
+}
+
 export function weekKeys(now: Date, offsetWeeks = 0): string[] {
   const mon = addDays(mondayOf(now), offsetWeeks * 7);
   return Array.from({ length: 7 }, (_, i) => dateKey(addDays(mon, i)));

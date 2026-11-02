@@ -16,11 +16,12 @@ lib/app            앱 상태와 동작 (Flutter 의존 없음) — 웹 src/app�
   edits.dart       일정 바꾸기 목록·적용·미리보기(그날만=overrides / 매일=goals), Store.applyEdits로 적용
   chat_command.dart 채팅 글 → 바꾸기 목록(기기 안 규칙)
   log_edit.dart    기록 시각 고치기(웹 logEdit.ts와 같은 규칙), Store.retimeLog·tapAt
-  device_plan.dart 휴대폰에 맡길 알림·알람 목록(지금 일정 문구=웹 noticeFor, 일정 시작 예약 알림, 기상·취침 알람=dueAlarms 규칙)
+  device_plan.dart 휴대폰에 맡길 알림·알람 목록(지금 일정 문구=웹 noticeFor, 일정 시작·저녁 확인 예약 알림, 기상·취침 알람=dueAlarms 규칙), 위젯 둘째 줄
+  기록 이어 가기: derive.eveningAsk·todayProgress, Store.markRestAsPlanned('남은 건 일정대로 했어요'). 웹과 같은 규칙
   ai_chat.dart     로그인하면 서버 AI(supabase/functions/dayset-chat)가 먼저 읽는다: 보낼 요약·받은 답 검사, 실패하면 규칙
 lib/platform       기기 연결: 파일 저장(file_store), 공유·파일 고르기(share), 홈 화면 위젯(widget_bridge), 알림 자리(notify)
   device_sync.dart 알림(flutter_local_notifications)·알람(alarm)을 device_plan 목록대로 맞춘다. 알림 버튼 → 셸이 기록(늦으면 일정 시각부터)
-ci/patch_android.py  CI에서 flutter create 뒤 권한·알림 수신기·desugaring·서명(베타 키 APK / 스토어 키 AAB)을 넣는다
+ci/patch_android.py  CI에서 flutter create 뒤 권한·알림 수신기·위젯(native/android 복사)·desugaring·서명(베타 키 APK / 스토어 키 AAB)을 넣는다
 lib/ui             화면 — 웹 src/ui와 1:1
   theme.dart       디자인 B '나이트 링' 토큰(나이트·밝게)
   kit.dart         공통 부품(아이콘·카드·버튼·세그먼트·스위치·아래 창·입력)

@@ -239,6 +239,30 @@ DayView evaluate(AppState s, String key, DateTime now) {
   return DayView(key: key, plan: plan, hasData: hasData, ev: ev);
 }
 
+/// 저녁 확인에서 물을 일정: 시작한 습관·할 일 중 기록으로 달성이 확인되지 않은 것 + 이미 답한 것.
+/// open은 아직 답하지 않은 것('남은 건 일정대로 했어요'로 한 번에 채울 대상). 웹 eveningAsk와 같다.
+({List<ScheduleBlock> blocks, List<ScheduleBlock> open}) eveningAsk(AppState s, String key, DateTime now) {
+  final view = evaluate(s, key, now);
+  final missed = {for (final m in s.misses) if (m.day == key) m.blockId};
+  final skipped = {for (final m in s.skips) if (m.day == key) m.blockId};
+  final did = {for (final l in s.logs) if (l.source == LogSource.evening) l.id.replaceFirst(RegExp('^ev-'), '')};
+  bool answered(ScheduleBlock b) => did.contains(b.id) || missed.contains(b.id) || skipped.contains(b.id);
+  final blocks = view.plan.blocks.where((b) {
+    if (b.activity == null || b.kind == BlockKind.fixed || b.activity == Activity.sleep) return false;
+    if (b.start.isAfter(now)) return false;
+    if (answered(b)) return true;
+    final o = view.outcomes.where((x) => x.block.id == b.id).firstOrNull;
+    return o != null && o.outcome != Outcome.achieved && o.outcome != Outcome.pending;
+  }).toList();
+  return (blocks: blocks, open: blocks.where((b) => !answered(b)).toList());
+}
+
+/// 오늘 습관 진행도(기록 직후·위젯에 보여 준다). 저녁 확인 머리와 같은 숫자.
+({int achieved, int total}) todayProgress(AppState s, DateTime now) {
+  final v = evaluate(s, dateKey(now), now);
+  return (achieved: v.achieved, total: v.total);
+}
+
 List<String> weekKeys(DateTime now, [int offsetWeeks = 0]) {
   final mon = addDays(mondayOf(now), offsetWeeks * 7);
   return [for (var i = 0; i < 7; i++) dateKey(addDays(mon, i))];

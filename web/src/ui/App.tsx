@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ACTIVITY_LABEL, type Activity, dateKey, formatHm } from '../engine/models';
 import { objectParticle } from '../engine/coaching';
-import { canUndo, canUndoPlan, dueAlarms, ensureDay, markAsked, markNudged, markOpen, now, type Ring, skipCheck, tap, tapAt, type TapOutcome, track, undoPlanChange, undoTap, useAppState } from '../app/store';
+import { canUndo, canUndoPlan, dueAlarms, getState, ensureDay, markAsked, markNudged, markOpen, now, type Ring, skipCheck, tap, tapAt, type TapOutcome, track, undoPlanChange, undoTap, useAppState } from '../app/store';
 import { checkKey, nowCheck } from '../app/nowCheck';
 import { NowDock } from './NowDock';
 import { ConsentPanel } from './Preview';
 import { clearNowNotification, listenNotifyActions, noticeFor, permission, showNowNotification } from './notify';
-import { currentLog } from '../app/derive';
+import { currentLog, todayProgress } from '../app/derive';
 import { AlarmOverlay } from './AlarmOverlay';
 import { haptic, useMedia, useSwipeTabs, WIDE_QUERY } from './motion';
 import { Celebrate } from './Social';
@@ -40,6 +40,12 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
 ];
 
 const THEME_KEY = 'dayset:theme';
+
+/** 기록 직후 알림 띠에 붙이는 오늘 진행도(예: ' · 오늘 습관 3/5'). 오늘 일정이 없으면 빈 글. */
+function progressText(): string {
+  const p = todayProgress(getState(), now());
+  return p.total > 0 ? ` · 오늘 습관 ${p.achieved}/${p.total}` : '';
+}
 
 function readTheme(): Theme {
   try {
@@ -137,7 +143,7 @@ export function App() {
       track(via === 'popup' ? (at ? 'check_record_late' : 'check_record') : 'notify_record', a);
       if (!r.changed) showToast(`이미 ${ACTIVITY_LABEL[a]} 기록 중이에요`);
       else if (r.error) showToast(`${ACTIVITY_LABEL[a]} 시작을 지금으로 기록했어요. ${r.error}`);
-      else showToast(at ? `${ACTIVITY_LABEL[a]}${objectParticle(ACTIVITY_LABEL[a])} ${formatHm(at)}부터로 기록했어요` : `${ACTIVITY_LABEL[a]} 시작을 기록했어요`, !at);
+      else showToast(`${at ? `${ACTIVITY_LABEL[a]}${objectParticle(ACTIVITY_LABEL[a])} ${formatHm(at)}부터로 기록했어요` : `${ACTIVITY_LABEL[a]} 시작을 기록했어요`}${progressText()}`, !at);
     },
     [showToast],
   );
@@ -208,7 +214,7 @@ export function App() {
     const r = tap(a);
     if (!r.changed) return;
     haptic(10);
-    showToast(r.merged ? `${ACTIVITY_LABEL[a]} 기록에 이어 붙였어요` : `${ACTIVITY_LABEL[a]} 시작을 기록했어요`, true);
+    showToast(`${r.merged ? `${ACTIVITY_LABEL[a]} 기록에 이어 붙였어요` : `${ACTIVITY_LABEL[a]} 시작을 기록했어요`}${progressText()}`, true);
   };
 
   // 기념일(3·7·14·30일…) 축하: 그날 처음 도달했을 때 한 번

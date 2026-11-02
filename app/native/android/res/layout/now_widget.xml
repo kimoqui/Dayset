@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- DaySet '지금' 위젯: 나이트 링 색. 제목을 누르면 앱이 열리고, 버튼은 앱을 열지 않고 기록한다. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -6,14 +7,32 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <TextView
-        android:id="@+id/now_title"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/now_head"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="지금 무엇을 하나요?"
-        android:textColor="#1B1F1D"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/now_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="지금 무엇을 하나요?"
+            android:textColor="#EEF1F7"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/now_sub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text=""
+            android:textColor="#9AA4BB"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

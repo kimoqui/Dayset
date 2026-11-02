@@ -3,7 +3,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../core/engine/achievement.dart';
 import '../../core/model/models.dart';
 import '../../app/derive.dart';
 import '../kit.dart';
@@ -40,20 +39,16 @@ class _EveningScreenState extends State<EveningScreen> {
     final didIds = {for (final l in s.logs) if (l.source == LogSource.evening) l.id.replaceFirst(RegExp('^ev-'), '')};
 
     // 물어볼 블록: 시작한 지 지난 습관·할 일 중 기록으로 달성이 확인되지 않은 것 + 이미 답한 것
-    final asked = view.plan.blocks.where((b) {
-      if (b.activity == null || b.kind == BlockKind.fixed || b.activity == Activity.sleep) return false;
-      if (b.start.isAfter(now)) return false;
-      if (didIds.contains(b.id) || missed.containsKey(b.id) || skipped.contains(b.id)) return true;
-      final o = view.outcomes.where((x) => x.block.id == b.id).firstOrNull;
-      return o != null && o.outcome != Outcome.achieved && o.outcome != Outcome.pending;
-    }).toList();
+    final ask = eveningAsk(s, key, now);
+    final asked = ask.blocks;
+    final open = ask.open;
 
     final firstEvent = tomorrow.blocks.where((b) => b.kind == BlockKind.fixed && b.locked).firstOrNull;
 
     return ScreenList(tab: false, children: [
       TopBar(
         title: '오늘 하루 확인',
-        sub: '기록 없는 일정만 골라요',
+        sub: '일정대로 했으면 한 번에, 다르게 한 것만 고쳐요',
         onBack: context.ui.actions.back,
         right: Pill(view.isSetDay ? '셋 데이' : '습관 ${view.achieved}/${view.total}'),
       ),
@@ -87,6 +82,14 @@ class _EveningScreenState extends State<EveningScreen> {
             ),
         ]),
       ),
+      if (open.isNotEmpty)
+        DsCard(tint: true, children: [
+          Text('기록이 없는 일정 ${open.length}개가 있어요. 일정대로 했으면 한 번에 채우고, 다르게 한 것만 아래에서 고쳐요.', style: DsText.body.copyWith(color: c.ink)),
+          DsButton.primary('남은 ${open.length}개는 일정대로 했어요', block: true, onPressed: () {
+            final n = store.markRestAsPlanned(key);
+            if (n > 0) context.toast('$n개를 일정대로 했어요로 채웠어요');
+          }),
+        ]),
       if (asked.isEmpty)
         DsCard(children: [Text('기록이 없는 일정이 없어요. 오늘은 모두 자동으로 기록됐어요.', style: DsText.body.copyWith(color: c.ink))])
       else

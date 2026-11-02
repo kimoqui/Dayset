@@ -51,15 +51,20 @@ void main() {
     test('알림을 켜야 예약하고, 앞으로 24시간 안의 기록할 일정만', () {
       expect(scheduledNotices(store.state, store.now()), isEmpty);
       store.setNotify((n) => n.copyWith(enabled: true));
-      final list = scheduledNotices(store.state, store.now());
+      final all = scheduledNotices(store.state, store.now());
+      final list = all.where((n) => n.notice.open == null).toList();
       expect(list, isNotEmpty);
+      // 저녁 확인 알림은 21시에 하나
+      final evening = all.where((n) => n.notice.open == 'evening').toList();
+      expect(evening, hasLength(1));
+      expect(evening.single.at.hour, lessThanOrEqualTo(21));
       for (final n in list) {
         expect(n.at.isAfter(store.now()), isTrue);
         expect(n.at.isBefore(store.now().add(const Duration(hours: 24))), isTrue);
         expect(n.notice.activity, isNotNull);
         expect(n.notice.blockStart, n.at);
       }
-      expect(list.map((n) => n.id).toSet().length, list.length);
+      expect(all.map((n) => n.id).toSet().length, all.length);
       // '일정 시작하면 알리기'를 끄면 예약하지 않는다
       store.setNotify((n) => n.copyWith(remind: false));
       expect(scheduledNotices(store.state, store.now()), isEmpty);
@@ -67,10 +72,17 @@ void main() {
 
     test("'지금은 안 해요'로 넘긴 조각은 예약하지 않는다", () {
       store.setNotify((n) => n.copyWith(enabled: true));
-      final first = scheduledNotices(store.state, store.now()).first;
+      final first = scheduledNotices(store.state, store.now()).firstWhere((n) => n.notice.skipId != null);
       store.skipCheck(first.notice.skipId!);
       expect(scheduledNotices(store.state, store.now()).map((n) => n.notice.skipId), isNot(contains(first.notice.skipId)));
     });
+  });
+
+  test('저녁 확인을 마치면 저녁 알림을 보내지 않는다', () {
+    store.setNotify((n) => n.copyWith(enabled: true));
+    store.setFixedClock(at(19, 20, 0));
+    store.finishEvening('2026-10-19');
+    expect(scheduledNotices(store.state, store.now()).where((n) => n.notice.open == 'evening'), isEmpty);
   });
 
   test('지금 일정 알림 문구는 웹과 같다', () {

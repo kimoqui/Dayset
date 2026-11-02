@@ -16,6 +16,7 @@ class WidgetBridge {
   static const keyPending = 'pending_events';
   static const keyCurrent = 'current_activity';
   static const keySince = 'current_since';
+  static const keyLine = 'widget_line';
 
   Future<void> init() => HomeWidget.setAppGroupId(appGroupId);
 
@@ -33,7 +34,9 @@ class WidgetBridge {
     return events;
   }
 
-  Future<void> publishCurrent(ActivityLog? current) async {
+  /// 지금 상태와 둘째 줄(다음 일정·오늘 진행도)을 위젯에 알린다.
+  Future<void> publishCurrent(ActivityLog? current, {String line = ''}) async {
+    await HomeWidget.saveWidgetData<String>(keyLine, line);
     await HomeWidget.saveWidgetData<String>(keyCurrent, current?.activity.name ?? '');
     await HomeWidget.saveWidgetData<String>(
         keySince, current?.start.toIso8601String() ?? '');

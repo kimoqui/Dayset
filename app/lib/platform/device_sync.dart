@@ -29,13 +29,16 @@ import 'notify.dart';
 
 /// 알림 버튼을 눌렀을 때 셸에 건네는 것.
 class NoticeAction {
-  const NoticeAction({required this.action, this.activity, this.blockStart, this.skipId});
+  const NoticeAction({required this.action, this.activity, this.blockStart, this.skipId, this.open});
 
   /// 'record' | 'skip' | 'open'
   final String action;
   final Activity? activity;
   final DateTime? blockStart;
   final String? skipId;
+
+  /// 알림을 눌렀을 때 열 화면('evening').
+  final String? open;
 
   static NoticeAction? parse(String? actionId, String? payload) {
     Map<String, Object?> p = const {};
@@ -44,7 +47,7 @@ class NoticeAction {
     } catch (_) {}
     final a = Activity.values.where((x) => x.name == p['a']).firstOrNull;
     final s = p['s'] is num ? DateTime.fromMillisecondsSinceEpoch((p['s'] as num).toInt()) : null;
-    return NoticeAction(action: actionId ?? 'open', activity: a, blockStart: s, skipId: p['k'] as String?);
+    return NoticeAction(action: actionId ?? 'open', activity: a, blockStart: s, skipId: p['k'] as String?, open: p['o'] as String?);
   }
 }
 
@@ -52,6 +55,7 @@ String _payload(DeviceNotice n) => jsonEncode({
       if (n.activity != null) 'a': n.activity!.name,
       if (n.blockStart != null) 's': n.blockStart!.millisecondsSinceEpoch,
       if (n.skipId != null) 'k': n.skipId,
+      if (n.open != null) 'o': n.open,
     });
 
 /// 버튼만 누르고 앱을 열지 않는 경우는 없지만(버튼은 모두 앱을 연다), 플러그인이 요구하는 빈 처리기.

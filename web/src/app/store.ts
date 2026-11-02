@@ -30,6 +30,7 @@ import {
   buildPlan,
   currentLog,
   evaluate,
+  eveningAsk,
   planFor,
   recentSnoozes,
   regeneratePlan,
@@ -638,6 +639,27 @@ export function markDid(day: string, b: ScheduleBlock): void {
     next = commitLogs(next, [...next.logs, log].sort((a, c) => a.start.getTime() - c.start.getTime()));
     return credit(next, day, b);
   });
+}
+
+/**
+ * 저녁 확인 '남은 건 일정대로 했어요': 아직 답하지 않은 일정을 모두 '했어요'로 채운다.
+ * 다르게 한 것만 골라 고치면 되도록(기본값 = 일정대로). 채운 개수를 돌려준다.
+ */
+export function markRestAsPlanned(day: string): number {
+  const t = now();
+  const open = eveningAsk(state, day, t).open;
+  if (!open.length) return 0;
+  set((s) => {
+    let next = s;
+    for (const b of open) {
+      next = clearMarks(next, day, b);
+      const log: ActivityLog = { id: eveningLogId(b.id), activity: b.activity ?? 'work', start: b.start, end: b.end, source: 'evening', confirmed: true, snoozeCount: 0 };
+      next = commitLogs(next, [...next.logs, log].sort((a, c) => a.start.getTime() - c.start.getTime()));
+      next = credit(next, day, b);
+    }
+    return { ...next, metrics: addEvent(next.metrics, t, 'evening_all_planned') };
+  });
+  return open.length;
 }
 
 export function markMissed(day: string, b: ScheduleBlock, reason: MissReason): void {

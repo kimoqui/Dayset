@@ -63,6 +63,15 @@ class NowWidgetProvider : AppWidgetProvider() {
                 R.id.now_title,
                 labels[current]?.let { "$it 중" } ?: "지금 무엇을 하나요?",
             )
+            views.setTextViewText(R.id.now_sub, SharedStore.line(context))
+            // 제목을 누르면 앱을 연다(누른 기록이 바로 반영된다).
+            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let { launch ->
+                val open = PendingIntent.getActivity(
+                    context, 100, launch,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+                views.setOnClickPendingIntent(R.id.now_head, open)
+            }
             buttons.forEachIndexed { index, (viewId, name) ->
                 val tap = Intent(context, NowWidgetProvider::class.java).apply {
                     action = ACTION_TAP
@@ -78,7 +87,7 @@ class NowWidgetProvider : AppWidgetProvider() {
                     viewId, "setBackgroundResource",
                     if (on) R.drawable.now_btn_on else R.drawable.now_btn_off,
                 )
-                views.setTextColor(viewId, if (on) Color.WHITE else Color.parseColor("#1B1F1D"))
+                views.setTextColor(viewId, Color.parseColor(if (on) "#1A1300" else "#EEF1F7"))
             }
             return views
         }
@@ -90,6 +99,7 @@ object SharedStore {
     private const val KEY_PENDING = "pending_events"
     private const val KEY_CURRENT = "current_activity"
     private const val KEY_SINCE = "current_since"
+    private const val KEY_LINE = "widget_line"
 
     fun append(context: Context, activity: String, atMillis: Long) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -107,6 +117,10 @@ object SharedStore {
             .putString(KEY_SINCE, stamp)
             .apply()
     }
+
+    /** 앱이 알려 준 둘째 줄(다음 일정·오늘 진행도). */
+    fun line(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_LINE, null) ?: "누르면 앱을 열지 않고 바로 기록해요"
 
     fun current(context: Context): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

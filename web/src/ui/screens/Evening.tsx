@@ -10,11 +10,10 @@ import {
   isEstimate,
   MISS_LABEL,
   MISS_REASONS,
-  type ScheduleBlock,
   SOURCE_LABEL,
 } from '../../engine/models';
-import { evaluate, logsAround, planFor } from '../../app/derive';
-import { clearAnswer, extendTask, finishEvening, markDid, markMissed, markSkipped, setRestDay, taskPlanMinutes, toggleTaskDone } from '../../app/store';
+import { evaluate, eveningAsk, logsAround, planFor } from '../../app/derive';
+import { clearAnswer, extendTask, finishEvening, markDid, markMissed, markRestAsPlanned, markSkipped, setRestDay, taskPlanMinutes, toggleTaskDone } from '../../app/store';
 import type { AppState } from '../../app/state';
 import { Icon, Switch, TopBar } from '../kit';
 
@@ -34,13 +33,7 @@ export function Evening({ s, now, onBack }: { s: AppState; now: Date; onBack: ()
   const didIds = new Set(s.logs.filter((l) => l.source === 'evening').map((l) => l.id.replace(/^ev-/, '')));
 
   // 물어볼 블록: 시작한 지 지난 습관·할 일 중 기록으로 달성이 확인되지 않은 것 + 이미 답한 것
-  const asked: ScheduleBlock[] = view.plan.blocks.filter((b) => {
-    if (!b.activity || b.kind === 'fixed' || b.activity === 'sleep') return false;
-    if (isAfter(b.start, now)) return false;
-    if (didIds.has(b.id) || missed.has(b.id) || skipped.has(b.id)) return true;
-    const o = view.outcomes.find((x) => x.block.id === b.id);
-    return o != null && o.outcome !== 'achieved' && o.outcome !== 'pending';
-  });
+  const { blocks: asked, open } = useMemo(() => eveningAsk(s, key, now), [s, key, now]);
 
   const firstEvent = tomorrow.blocks.find((b) => b.kind === 'fixed' && b.locked);
 
@@ -48,7 +41,7 @@ export function Evening({ s, now, onBack }: { s: AppState; now: Date; onBack: ()
     <div className="screen plain">
       <TopBar
         title="오늘 하루 확인"
-        sub="기록 없는 일정만 골라요"
+        sub="일정대로 했으면 한 번에, 다르게 한 것만 고쳐요"
         onBack={onBack}
         right={<span className="pill" style={{ whiteSpace: 'nowrap' }}>{view.isSetDay ? '셋 데이' : `습관 ${view.achieved}/${view.total}`}</span>}
       />
@@ -71,6 +64,17 @@ export function Evening({ s, now, onBack }: { s: AppState; now: Date; onBack: ()
           </div>
         ))}
       </section>
+
+      {open.length > 0 && (
+        <section className="card tint" aria-label="한 번에 확인">
+          <span className="t-body">
+            기록이 없는 일정 <strong>{open.length}개</strong>가 있어요. 일정대로 했으면 한 번에 채우고, 다르게 한 것만 아래에서 고쳐요.
+          </span>
+          <button type="button" className="btn primary block" onClick={() => markRestAsPlanned(key)}>
+            남은 {open.length}개는 일정대로 했어요
+          </button>
+        </section>
+      )}
 
       {asked.length === 0 ? (
         <div className="card">

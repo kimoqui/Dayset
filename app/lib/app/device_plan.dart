@@ -15,7 +15,7 @@ import 'store.dart' show RingKind;
 
 /// 알림 하나(지금 일정 또는 예약).
 class DeviceNotice {
-  const DeviceNotice({required this.title, required this.body, this.activity, this.skipId, this.blockStart, this.silent = false, this.until});
+  const DeviceNotice({required this.title, required this.body, this.activity, this.skipId, this.blockStart, this.silent = false, this.until, this.open});
   final String title;
   final String body;
 
@@ -34,7 +34,10 @@ class DeviceNotice {
   /// 이 시각이 지나면 알림을 거둔다(오래된 알림이 남지 않게).
   final DateTime? until;
 
-  String get signature => '$title|$body|${activity?.name}|$skipId|${blockStart?.millisecondsSinceEpoch}|$silent|${until?.millisecondsSinceEpoch}';
+  /// 누르면 열 화면('evening' = 저녁 확인).
+  final String? open;
+
+  String get signature => '$title|$body|${activity?.name}|$skipId|${blockStart?.millisecondsSinceEpoch}|$silent|${until?.millisecondsSinceEpoch}|$open';
 }
 
 /// 예약 알림: 정해진 시각에 기기가 띄운다.
@@ -131,6 +134,20 @@ List<ScheduledNotice> scheduledNotices(AppState s, DateTime now, {Duration horiz
       ));
     }
   }
+  // 저녁 확인 알림: 21시(일찍 자는 날은 취침 1시간 전). 오늘 확인을 마쳤으면 보내지 않는다.
+  final today = dateKey(now);
+  if (!s.eveningDone.contains(today) && (obs == null || today.compareTo(obs.day1) > 0)) {
+    var at = DateTime(now.year, now.month, now.day, 21);
+    final bed = addMin(planFor(s, dateKey(addDays(now, 1)), now).plan.bedTonight, -60);
+    if (bed.isBefore(at)) at = bed;
+    if (at.isAfter(now)) {
+      out.add(ScheduledNotice(
+        id: _dayId(today, 99),
+        at: at,
+        notice: DeviceNotice(title: '오늘 하루 확인 · 1분', body: '일정대로 했으면 한 번에 끝나요. 다르게 한 것만 고쳐요', open: 'evening', until: DateTime(now.year, now.month, now.day, 23, 59)),
+      ));
+    }
+  }
   return out;
 }
 
@@ -166,4 +183,18 @@ List<DeviceAlarm> deviceAlarms(AppState s, DateTime now) {
     break; // 다음 취침 하나만
   }
   return out;
+}
+
+/// 홈 화면 위젯 둘째 줄: 다음 일정과 오늘 진행도(예: '다음 12:00 점심 식사 · 오늘 습관 2/5').
+String widgetLine(AppState s, DateTime now) {
+  if (!s.onboarded) return '앱에서 처음 설정을 마쳐 주세요';
+  if (_recording(s)) return '오늘은 하루를 그대로 기록해요';
+  final plan = planFor(s, dateKey(now), now).plan;
+  final next = plan.blocks.where((b) => b.start.isAfter(now) && b.activity != Activity.sleep).firstOrNull;
+  final p = todayProgress(s, now);
+  final parts = [
+    next == null ? '오늘 남은 일정 없음' : '다음 ${formatHm(next.start)} ${next.title}',
+    if (p.total > 0) '오늘 습관 ${p.achieved}/${p.total}',
+  ];
+  return parts.join(' · ');
 }

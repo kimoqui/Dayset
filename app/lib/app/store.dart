@@ -649,6 +649,24 @@ class Store {
     });
   }
 
+  /// 저녁 확인 '남은 건 일정대로 했어요': 아직 답하지 않은 일정을 모두 '했어요'로 채운다. 채운 개수.
+  int markRestAsPlanned(String day) {
+    final t = now();
+    final open = eveningAsk(_state, day, t).open;
+    if (open.isEmpty) return 0;
+    _set((s) {
+      var next = s;
+      for (final b in open) {
+        next = _clearMarks(next, day, b);
+        final log = ActivityLog(id: _eveningLogId(b.id), activity: b.activity ?? Activity.work, start: b.start, end: b.end, source: LogSource.evening);
+        next = _commitLogs(next, stableSorted([...next.logs, log], (a, c) => a.start.compareTo(c.start)));
+        next = _credit(next, day, b);
+      }
+      return next.copyWith(metrics: addEvent(next.metrics, t, 'evening_all_planned'));
+    });
+    return open.length;
+  }
+
   void markMissed(String day, ScheduleBlock b, MissReason reason) {
     final t = now();
     _set((s) {
